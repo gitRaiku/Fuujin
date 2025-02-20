@@ -22,8 +22,8 @@
   }
 
   .plcanvas {
-    max-width: 80%;
-    max-height: 80%;
+    width: 80%;
+    height: 80%;
     border: 6px solid black;
   }
 
@@ -85,117 +85,31 @@
   import Header from "$lib/Header.svelte";
   import { onMount } from 'svelte';
 
+  import { Playground } from './Playground.js';
+  
+  let pl;
+
   onMount(() => {
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+    const canvas = document.getElementById("canvas");
+    pl = new Playground(canvas);
+    pl.updateBounds(window.innerWidth, window.innerHeight);
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+    // canvas.addEventListener("click", (event) => {pl.onClick(event.offsetX, event.offsetY)})
+    canvas.addEventListener("mousedown", (event) => {pl.mouseDown(event.offsetX, event.offsetY)})
+    canvas.addEventListener("mousemove", (event) => {pl.mouseMove(event.offsetX, event.offsetY)})
+    canvas.addEventListener("mouseup", (event) => {pl.mouseUp(event.offsetX, event.offsetY)})
 
-const nodes = [];
-const edges = [];
-let draggingNode = null;
+    window.addEventListener("resize", () => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
 
-// 🎯 Function to add a node at a given position
-function addNode(x, y) {
-  nodes.push({ x, y, radius: 10 });
-  drawGraph();
-}
-
-// 🎯 Function to check if a click is inside a node
-function getNodeAtPosition(x, y) {
-  return nodes.find(node => {
-    return Math.hypot(node.x - x, node.y - y) < node.radius;
-  });
-}
-
-// 🎯 Function to connect two nodes
-function addEdge(node1, node2) {
-  edges.push({ node1, node2 });
-  drawGraph();
-}
-
-// 🎯 Function to draw the graph (nodes + edges)
-function drawGraph() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw edges first
-  edges.forEach(({ node1, node2 }) => {
-    ctx.beginPath();
-    ctx.moveTo(node1.x, node1.y);
-    ctx.lineTo(node2.x, node2.y);
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  });
-
-  // Draw nodes on top
-  nodes.forEach(node => {
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-    ctx.fillStyle = "blue";
-    ctx.fill();
-    ctx.strokeStyle = "white";
-    ctx.stroke();
-  });
-}
-
-console.log(canvas.getBoundingClientRect());
-
-// 🎯 Mouse event listeners for interaction
-canvas.addEventListener("click", (event) => {
-  let { offsetX: x, offsetY: y } = event;
-  console.log(`Clicked`);
-  console.log(`${x} ${y}`);
-  const clickedNode = getNodeAtPosition(x, y);
-
-  if (clickedNode) {
-    // If clicking an existing node, connect it to the last selected node
-    if (nodes.length > 1) {
-      addEdge(nodes[nodes.length - 1], clickedNode);
-    }
-  } else {
-    // Otherwise, add a new node
-    addNode(x, y);
-  }
-});
-
-// 🎯 Dragging nodes functionality
-canvas.addEventListener("mousedown", (event) => {
-  const { offsetX: x, offsetY: y } = event;
-  draggingNode = getNodeAtPosition(x, y);
-});
-
-canvas.addEventListener("mousemove", (event) => {
-  if (draggingNode) {
-    draggingNode.x = event.offsetX;
-    draggingNode.y = event.offsetY;
-    drawGraph();
-  }
-});
-
-canvas.addEventListener("mouseup", () => {
-  draggingNode = null;
-});
-
-// 🎯 Resize canvas dynamically
-window.addEventListener("resize", () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  drawGraph();
-});
-
-document.getElementById("upload").addEventListener("click", () => {document.getElementById("audioFile").click();});
-
-document.getElementById("audioFile").addEventListener("change", (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    const audio = new Audio(URL.createObjectURL(file));
-    audio.play();
-    console.log("Playing:", file.name);
-  }
-});
-
+    document.getElementById("upload").addEventListener("click", () => {document.getElementById("audioFile").click()})
+    document.getElementById("audioFile").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const audio = new Audio(URL.createObjectURL(file));
+        audio.play();
+        console.log("Playing:", file.name);
+      }
+    });
     
   });
 </script>
