@@ -49,6 +49,11 @@
     cursor: pointer;
     transition: background 0.3s, border-color 0.3s, transform 0.2s;
   }
+  
+  :global(button.buttonSelected) {
+    color: black;
+    background: white;
+  }
 
   button:hover {
     background: #0056b3; /* Darker shade on hover */
@@ -69,13 +74,15 @@
     <div class="plcanvas"><canvas id="canvas"></canvas></div>
 
     <div id="controls" class="plbuttons">
-      <button id="red">Red Node</button>
-      <button id="blue">Blue Node</button>
-      <button id="green">Green Node</button>
-      <button id="yellow">Yellow Node</button>
+      <button id="node_addr" class="buttonSelected">Adder Node</button>
+      <button id="node_mult">Multiplier Node</button>
+      <button id="node_cnst">Constant Node</button>
+      <!--<button id="yellow">Yellow Node</button>
       <button id="purple">Purple Node</button>
       <button id="upload">Upload Audio</button>
-      <input type="file" id="audioFile" accept="audio/*" style="display: none;">
+      <input type="file" id="audioFile" accept="audio/*" style="display: none;">-->
+      <button id="node_audi">Audio Node</button>
+      <button id="node_ante">Antenna Node</button>
     </div>
   </div>
 </div>
@@ -84,14 +91,20 @@
 <script>
   import Header from "$lib/Header.svelte";
   import { onMount } from 'svelte';
-
   import { Playground } from './Playground.js';
   
   let pl;
-
   onMount(() => {
+    let nodeButtons = [
+      document.getElementById("node_addr"),
+      document.getElementById("node_mult"),
+      document.getElementById("node_cnst"),
+      document.getElementById("node_audi"),
+      document.getElementById("node_ante")
+    ]
+
     const canvas = document.getElementById("canvas");
-    pl = new Playground(canvas);
+    pl = new Playground(canvas, nodeButtons);
     pl.updateBounds(window.innerWidth, window.innerHeight);
 
     // canvas.addEventListener("click", (event) => {pl.onClick(event.offsetX, event.offsetY)})
@@ -99,8 +112,19 @@
     canvas.addEventListener("mousemove", (event) => {pl.mouseMove(event.offsetX, event.offsetY)})
     canvas.addEventListener("mouseup", (event) => {pl.mouseUp(event.offsetX, event.offsetY)})
 
+    for (const [i, node] of nodeButtons.entries()) {
+      node.addEventListener("click", () => {
+        for (const [li, lnode] of nodeButtons.entries()) {
+          if (li != i) { lnode.classList.remove("buttonSelected") }
+        }
+        node.classList.add("buttonSelected")
+        pl.nextNodeType = i
+      })
+    }
+
     window.addEventListener("resize", () => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
 
+    /*
     document.getElementById("upload").addEventListener("click", () => {document.getElementById("audioFile").click()})
     document.getElementById("audioFile").addEventListener("change", (event) => {
       const file = event.target.files[0];
@@ -110,6 +134,7 @@
         console.log("Playing:", file.name);
       }
     });
+    */
     
   });
 </script>
