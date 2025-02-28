@@ -1,5 +1,104 @@
 import { PCMPlayer } from '/src/routes/playground/pcm-player.js';
 
+import { KissFFT, KissFFTR, loadKissFFT } from '/src/routes/login/KissFFTLoader.js';
+
+export async function playgroundOnMount() { await loadKissFFT() }
+
+class AudioPacket {
+  constructor(type, data) {
+    this.type = type
+    if (data != undefined) {
+      this.arr = data
+    } else {
+      if (type == 0) {
+        this.arr = new Float32Array(512)
+      } else if (type == 1) {
+        this.arr = new Float32Array(514)
+      }
+    }
+  }
+
+  freqToBin() {
+  }
+
+  freqPacket(freq, amplitude, offset) {
+    var f32 = new Float32Array(512)
+    freq *= 44100 / 512
+    for (var i = 0; i < 512; ++i) {
+      f32[i] = Math.sin(((i + offset / (180 * 2 / 512)) / 512 * 3.1415 * 2 * freq) * amplitude)
+    }
+    return f32
+  }
+
+  setInplace(p) {
+    this.arr = p.arr
+    this.type = p.type
+  }
+
+  setFreq(freq, amp = 1.0, offset = 0.0) {
+    if (this.type == 0) {
+      console.log("Trying to set frequency on time packet!")
+      return
+    } else if (this.type == 1) {
+      const fft = new KissFFTR(512)
+      const cp = new AudioPacket(1, fft.forward(this.freqPacket(freq, 1.0, 0.0)))
+      this.setInplace(this.add(cp))
+      fft.dispose()
+    }
+  }
+
+  toFreq() {
+    if (this.type == 0) {
+      const fft = new KissFFTR(512)
+      const cp = new AudioPacket(0, fft.forward(this.arr))
+      fft.dispose()
+      return cp
+    } else if (this.type == 1) {
+      return this
+    } else if (this.type == 2) {
+      return this
+    }
+  }
+
+  toTime() {
+    if (this.type == 0) {
+      return this
+    } else if (this.type == 1) {
+      var fft = new KissFFTR(512)
+      const cp = new AudioPacket(0, fft.inverse(this.arr))
+      fft.dispose()
+      return cp
+    }
+  }
+
+  add(p) {
+    if (this.type == 0 && p.type == 0) {
+      for (let i = 0; i < 512; ++i) { this.arr[i] += p.arr[i] }
+    } else if (this.type == 1 && p.type == 1) {
+      for (let i = 0; i < 514; ++i) { this.arr[i] += p.arr[i] }
+    } else if (this.type == 0 && p.type == 1) {
+
+    } else if (this.type == 1 && p.type == 0) {
+    }
+    return this
+  }
+
+  mult(p) {
+    if (this.type == 1) {
+      this.setInplace(this.toTime())
+    }
+    if (p.type == 1) {
+      p = p.toTime()
+    }
+    if (this.type == 0 && p.type == 0) {
+      for (let i = 0; i < 512; ++i) { this.arr[i] *= p.arr[i] }
+    } else {
+
+    }
+    return this
+  }
+}
+
 class RFElement {
   constructor(name, pos, pl) {
     this.name = name
@@ -44,6 +143,16 @@ class RFElement {
       pl.ctx.fill()
     }
   }
+
+  destroyContextMenu() {
+   if (this.input != undefined) {
+     this.input.remove()
+   }
+   if (this.button != undefined) {
+     this.button.remove()
+   }
+  }
+
 
   drawText(pl, pos, string) {
     pl.ctx.beginPath()
@@ -125,12 +234,17 @@ class RFElement {
   }
 
   pullVals() {
-    this.facets.forEach(facet => {
+    this.facets.forEach((facet, fi) => {
       if (facet.iout == 0) {
         if (facet.link == null) {
-          facet.val = 0.0;
+          facet.val = new AudioPacket(0);
+          //console.log(`${this.name} ${facet} Pulled NOTHING`)
         } else {
           facet.val = this.pl.nodes[facet.link[0]].facets[facet.link[1]].val;
+          if (facet.val == undefined) {
+            console.log(`Found undefined packet! ${this.id}.${fi} -> ${facet.link[0]}.${facet.link[1]}`)
+          }
+          //console.log(`${this.name} ${facet} Pulled ${facet.val}`)
         }
       }
     })
@@ -215,22 +329,28 @@ class RFAudio extends RFElement {
     document.body.appendChild(this.input)
   }
 
-  destroyContextMenu() {
-   this.input.remove()
-   this.button.remove()
-  }
-
   pdraw(pl, pos, size, col) {
     this.drawSquircle(pl, pos, size, 2, col)
   }
 
   pupdate() {
+    const cp = new AudioPacket(1)
+    cp.setFreq(400)
+    this.facets[0].val = cp
+    return
+
+    /*
+    const cp = new AudioPacket(0)
+    let curPos = 0
     if (this.audioData != undefined && this.lastSample < this.audioLength) {
-      this.facets[0].val = this.audioData[this.lastSample]
-      this.lastSample++
-    } else {
-      this.facets[0].val = 0.0
+      while (curPos < 512 && this.lastSample < this.audioLength) {
+        cp.arr[curPos] = this.audioData[this.lastSample]
+        ++this.lastSample
+        ++curPos
+      }
     }
+    this.facets[0].val = cp
+    */
   }
 }
 
@@ -279,7 +399,7 @@ class RFAdder extends RFElement {
   }
 
   pupdate() {
-    this.facets[2].val = this.facets[0].val + this.facets[1].val
+    this.facets[2].val = this.facets[0].val.add(this.facets[1].val)
   }
 }
 
@@ -323,7 +443,7 @@ class RFMult extends RFElement {
   }
 
   pupdate() {
-    this.facets[2].val = this.facets[0].val * this.facets[1].val
+    this.facets[2].val = this.facets[0].val.mult(this.facets[1].val)
   }
 }
 
@@ -373,10 +493,6 @@ class RFConst extends RFElement {
     }
   }
 
-  destroyContextMenu() {
-   this.input.remove()
-  }
-
   pdraw(pl, pos, size, col) {
     this.drawSquircle(pl, pos, size, 2, col)
     pl.ctx.beginPath();
@@ -398,7 +514,11 @@ class RFConst extends RFElement {
   }
 
   pupdate() {
-    this.facets[0].val = this.constant
+    const cp = new AudioPacket(0)
+    for (let i = 0; i < 512; ++i) {
+      cp.arr[i] = this.constant
+    }
+    this.facets[0].val = cp
   }
 }
 
@@ -435,14 +555,84 @@ class RFAntenna extends RFElement {
       sampleRate: 44100,
       flushingTime: 1000
     })
-    const f32 = new Float32Array(this.samples.length)
-    f32.set(this.samples)
+    const f32 = new Float32Array(this.samples.length * 512)
+    console.log(`This sample ${this.samples.length} ${this.samples}`)
+    for (let i = 0; i < this.samples.length; ++i) {
+      f32.set(this.samples[i].arr, i * 512)
+    }
     this.ppl.feed(f32)
     //this.ppl.flush()
   }
 
   pupdate() {
-    this.samples.push(this.facets[0].val)
+    this.samples.push(this.facets[0].val.toTime())
+  }
+}
+
+class RFOscillator extends RFElement {
+  constructor(name, pos, pl) { 
+    super(name, pos, pl); 
+    this.x = pos[0]
+    this.y = pos[1]
+    this.h = 100
+    this.w = 100
+    this.facets = [
+      {x: 50, y: 0, h: 30, w: 30, iout: 1},
+    ]
+    this.samples = []
+    this.freq = 0.0
+  }
+
+  initContextMenu() {
+    this.input.style.position = 'fixed'
+    this.input.type = 'text'
+    this.input.pl = this.pl
+    this.input.node = this
+
+    this.name = "Oscillator output"
+    this.input.style.visibility = 'visible'
+    this.input.style.border = 'none'
+    this.input.style.outline = 'none'
+    this.input.style.background = 'white'
+    this.input.style.color = 'black'
+    this.input.value = this.freq
+
+    this.input.onkeydown = this.inputHandleInput
+    this.input.onfocus = this.inputHandleFocus
+    document.body.appendChild(this.input)
+  }
+
+  inputHandleInput(e) {
+    this.pl.curaction = 0
+    const keycode = e.keyCode
+    if (keycode == 13) { 
+      let res = parseFloat(this.value)
+      console.log(`r ${res}`)
+      this.node.freq = res
+      if (res != NaN) {
+        this.node.contextOpen = false 
+        this.pl.drawGraph()
+      }
+    }
+  }
+
+  pdraw(pl, pos, size, col) {
+    pl.ctx.beginPath();
+    pl.ctx.lineWidth = 20;
+    pl.ctx.strokeStyle = "red";
+    const ll = pl.downSz(10, 10);
+    const sl = pl.downSz(5, 10);
+    const cl = pl.downSz(30, 10);
+    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2        )
+    pl.ctx.stroke()
+  }
+
+  pupdate() {
+    const cp = new AudioPacket(1)
+    cp.setFreq(this.freq)
+    this.facets[0].val = cp
   }
 }
 
@@ -508,10 +698,11 @@ export class Playground {
       }
     }
 
-    console.log(`Update order ${this.nodeUpdateOrder}`)
+    //console.log(`Update order ${this.nodeUpdateOrder}`)
   }
 
   updateNodes() {
+    return
     for (let i of this.nodeUpdateOrder) {
       this.nodes[i].update()
     }
@@ -656,6 +847,9 @@ export class Playground {
         this.nodes.push(new RFAntenna("Antenna", f, this))
         break
       case 5:
+        this.nodes.push(new RFOscillator("Oscillator", f, this))
+        break
+      case 6:
         const smil = new Date().getTime()
         let iterc = 0
         console.log("Start update")

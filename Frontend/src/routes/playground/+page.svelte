@@ -77,12 +77,9 @@
       <button id="node_addr" class="buttonSelected">Adder Node</button>
       <button id="node_mult">Multiplier Node</button>
       <button id="node_cnst">Constant Node</button>
-      <!--<button id="yellow">Yellow Node</button>
-      <button id="purple">Purple Node</button>
-      <button id="upload">Upload Audio</button>
-      <input type="file" id="audioFile" accept="audio/*" style="display: none;">-->
       <button id="node_audi">Audio Node</button>
       <button id="node_ante">Antenna Node</button>
+      <button id="node_osci">Oscillator Node</button>
       <button id="node_run">Run Node</button>
     </div>
   </div>
@@ -107,13 +104,17 @@
       }
     } catch(e) { }
   })
+
+  import { playgroundOnMount } from '/src/routes/playground/Playground.js'
   onMount(() => {
+    playgroundOnMount().then(() => {
     let nodeButtons = [
       document.getElementById("node_addr"),
       document.getElementById("node_mult"),
       document.getElementById("node_cnst"),
       document.getElementById("node_audi"),
       document.getElementById("node_ante"),
+      document.getElementById("node_osci"),
       document.getElementById("node_run")
     ]
 
@@ -132,19 +133,17 @@
     pl.linkFacets([1, 2], [3, 0])
     pl.linkFacets([4, 0], [3, 1])
     pl.linkFacets([3, 2], [5, 0])
-    pl.nodes[2].constant = 0.3
+    pl.nodes[2].constant = 0.0
     pl.nodes[4].constant = 2.0
     //pl.linkFacets([0, 0], [5, 0])
-    /*
     pl.nodes[0].fetchDataFromLink('/src/lib/amirmi.wav').then( () => {
       console.log(`ls ${pl.nodes[0].lastSample}`)
       while (pl.nodes[0].lastSample < pl.nodes[0].audioLength) {
         pl.updateNodes()
       }
       console.log("Done")
-      // pl.nodes[5].finish()
+      pl.nodes[5].finish()
     })
-    */
     pl.drawGraph()
 
     canvas.addEventListener("mousedown", (event) => {pl.mouseDown(event.offsetX, event.offsetY)})
@@ -163,6 +162,7 @@
 
     window.addEventListener("scroll", (event) => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
     window.addEventListener("resize", () => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
+    })
   });
 </script>
 
