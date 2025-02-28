@@ -96,14 +96,16 @@
   
   let pl;
   onDestroy(() => {
-    if (pl != null && pl != undefined) {
-      pl.nodes[5].ppl.destroy()
-      if (pl.nodes != null && pl.nodes != undefined) {
-        pl.nodes.forEach(node => {
-          if (node.contextOpen) { node.destroyContextMenu() }
-        })
+    try {
+      if (pl != null && pl != undefined) {
+        pl.nodes[5].ppl.destroy()
+        if (pl.nodes != null && pl.nodes != undefined) {
+          pl.nodes.forEach(node => {
+            if (node.contextOpen) { node.destroyContextMenu() }
+          })
+        }
       }
-    }
+    } catch(e) { }
   })
   onMount(() => {
     let nodeButtons = [
@@ -133,14 +135,16 @@
     pl.nodes[2].constant = 0.3
     pl.nodes[4].constant = 2.0
     //pl.linkFacets([0, 0], [5, 0])
+    /*
     pl.nodes[0].fetchDataFromLink('/src/lib/amirmi.wav').then( () => {
       console.log(`ls ${pl.nodes[0].lastSample}`)
       while (pl.nodes[0].lastSample < pl.nodes[0].audioLength) {
         pl.updateNodes()
       }
       console.log("Done")
-      pl.nodes[5].finish()
+      // pl.nodes[5].finish()
     })
+    */
     pl.drawGraph()
 
     canvas.addEventListener("mousedown", (event) => {pl.mouseDown(event.offsetX, event.offsetY)})
@@ -159,19 +163,6 @@
 
     window.addEventListener("scroll", (event) => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
     window.addEventListener("resize", () => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
-
-    /*
-    document.getElementById("upload").addEventListener("click", () => {document.getElementById("audioFile").click()})
-    document.getElementById("audioFile").addEventListener("change", (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        const audio = new Audio(URL.createObjectURL(file));
-        audio.play();
-        console.log("Playing:", file.name);
-      }
-    });
-    */
-    
   });
 </script>
 
