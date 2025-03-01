@@ -27,6 +27,12 @@
     border: 6px solid black;
   }
 
+  .speccanvas {
+    width: 80%;
+    height: 20%;
+    border: 6px solid black;
+  }
+
   .plbuttons {
     max-width: 80%;
     max-height: 20%;
@@ -71,6 +77,7 @@
 
 <div class="playground-top">
   <div class="playground">
+    <div class="speccanvas"><canvas id="spectrumCanvas"></canvas></div>
     <div class="plcanvas"><canvas id="canvas"></canvas></div>
 
     <div id="controls" class="plbuttons">
@@ -85,83 +92,97 @@
   </div>
 </div>
 
-
 <script>
   import Header from "$lib/Header.svelte";
   import { onMount, onDestroy } from 'svelte';
-  import { Playground } from './Playground.js';
+  import { Spectrum, spectrumOnMount } from './Spectrum.js';
+  import { Playground, playgroundOnMount } from './Playground.js';
   
   let pl;
+  let spec;
   onDestroy(() => {
-    try {
-      if (pl != null && pl != undefined) {
-        pl.nodes[5].ppl.destroy()
-        if (pl.nodes != null && pl.nodes != undefined) {
-          pl.nodes.forEach(node => {
-            if (node.contextOpen) { node.destroyContextMenu() }
-          })
-        }
-      }
-    } catch(e) { }
+    if (pl != null && pl != undefined) { pl.destroy() }
   })
 
-  import { playgroundOnMount } from '/src/routes/playground/Playground.js'
   onMount(() => {
     playgroundOnMount().then(() => {
-    let nodeButtons = [
-      document.getElementById("node_addr"),
-      document.getElementById("node_mult"),
-      document.getElementById("node_cnst"),
-      document.getElementById("node_audi"),
-      document.getElementById("node_ante"),
-      document.getElementById("node_osci"),
-      document.getElementById("node_run")
-    ]
+      let nodeButtons = [
+        document.getElementById("node_addr"),
+        document.getElementById("node_mult"),
+        document.getElementById("node_cnst"),
+        document.getElementById("node_audi"),
+        document.getElementById("node_ante"),
+        document.getElementById("node_osci"),
+        document.getElementById("node_run")
+      ]
 
-    const canvas = document.getElementById("canvas");
-    pl = new Playground(canvas, nodeButtons);
-    pl.updateBounds(window.innerWidth, window.innerHeight);
+      const canvas = document.getElementById("canvas"), 
 
-    pl.addNode([0.1, 0.5], 3)
-    pl.addNode([0.35, 0.5], 0)
-    pl.addNode([0.35, 0.2], 2)
-    pl.addNode([0.6, 0.5], 1)
-    pl.addNode([0.6, 0.2], 2)
-    pl.addNode([0.9, 0.5], 4)
-    pl.linkFacets([0, 0], [1, 0])
-    pl.linkFacets([2, 0], [1, 1])
-    pl.linkFacets([1, 2], [3, 0])
-    pl.linkFacets([4, 0], [3, 1])
-    pl.linkFacets([3, 2], [5, 0])
-    pl.nodes[2].constant = 0.0
-    pl.nodes[4].constant = 2.0
-    //pl.linkFacets([0, 0], [5, 0])
-    pl.nodes[0].fetchDataFromLink('/src/lib/amirmi.wav').then( () => {
-      console.log(`ls ${pl.nodes[0].lastSample}`)
-      while (pl.nodes[0].lastSample < pl.nodes[0].audioLength) {
-        pl.updateNodes()
-      }
-      console.log("Done")
-      pl.nodes[5].finish()
-    })
-    pl.drawGraph()
+      pl = new Playground(canvas, nodeButtons)
+      pl.updateBounds(window.innerWidth, window.innerHeight);
 
-    canvas.addEventListener("mousedown", (event) => {pl.mouseDown(event.offsetX, event.offsetY)})
-    canvas.addEventListener("mousemove", (event) => {pl.mouseMove(event.offsetX, event.offsetY)})
-    canvas.addEventListener("mouseup", (event) => {pl.mouseUp(event.offsetX, event.offsetY)})
-
-    for (const [i, node] of nodeButtons.entries()) {
-      node.addEventListener("click", () => {
-        for (const [li, lnode] of nodeButtons.entries()) {
-          if (li != i) { lnode.classList.remove("buttonSelected") }
+      pl.addNode([0.1, 0.5], 3)
+      pl.addNode([0.35, 0.5], 0)
+      pl.addNode([0.35, 0.2], 2)
+      pl.addNode([0.6, 0.5], 1)
+      pl.addNode([0.6, 0.2], 2)
+      pl.addNode([0.9, 0.5], 4)
+      pl.addNode([0.1, 0.2], 5)
+      if (1) {
+        if (1) {
+          pl.linkFacets([6, 0], [1, 0])
+          pl.linkFacets([2, 0], [1, 1])
+          pl.linkFacets([1, 2], [3, 0])
+          pl.linkFacets([4, 0], [3, 1])
+          pl.linkFacets([3, 2], [5, 0])
+          pl.nodes[2].constant = 0.0
+          pl.nodes[4].constant = 1.0
+          pl.nodes[6].freq = 200.0
+        } else {
+          pl.linkFacets([0, 0], [1, 0])
+          pl.linkFacets([2, 0], [1, 1])
+          pl.linkFacets([1, 2], [3, 0])
+          pl.linkFacets([4, 0], [3, 1])
+          pl.linkFacets([3, 2], [5, 0])
+          pl.nodes[2].constant = 0.0
+          pl.nodes[4].constant = 1.0
         }
-        node.classList.add("buttonSelected")
-        pl.nextNodeType = i
+      } else {
+        pl.linkFacets([0, 0], [5, 0])
+      }
+      pl.nodes[0].fetchDataFromLink('/src/lib/amirmi.wav').then( () => {
+        for (let i = 0; i < 20; ++i) {
+          pl.updateNodes()
+        }
+        //pl.nodes[5].finish()
       })
-    }
+      pl.drawGraph()
 
-    window.addEventListener("scroll", (event) => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
-    window.addEventListener("resize", () => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
+      canvas.addEventListener("mousedown", (event) => {pl.mouseDown(event.offsetX, event.offsetY)})
+      canvas.addEventListener("mousemove", (event) => {pl.mouseMove(event.offsetX, event.offsetY)})
+      canvas.addEventListener("mouseup", (event) => {pl.mouseUp(event.offsetX, event.offsetY)})
+      window.addEventListener("scroll", (event) => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
+      window.addEventListener("resize", () => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
+
+      for (const [i, node] of nodeButtons.entries()) {
+        node.addEventListener("click", () => {
+          for (const [li, lnode] of nodeButtons.entries()) {
+            if (li != i) { lnode.classList.remove("buttonSelected") }
+          }
+          node.classList.add("buttonSelected")
+          pl.nextNodeType = i
+        })
+      }
+      })
+    spectrumOnMount().then(() => {
+      const canvas = document.getElementById("spectrumCanvas"), 
+      spec = new Spectrum(canvas)
+      spec.updateBounds(window.innerWidth, window.innerHeight);
+      spec.update()
+
+      window.addEventListener("scroll", (event) => {spec.updateBounds(window.innerWidth, window.innerHeight); spec.update()})
+      window.addEventListener("resize", () => {spec.updateBounds(window.innerWidth, window.innerHeight); spec.update()})
+
     })
   });
 </script>

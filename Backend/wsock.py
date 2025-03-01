@@ -3,37 +3,78 @@ import asyncio
 import websockets
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+from time import time, sleep
+
+class Message:
+    def __init__(self, data):
+        self.data = np.frombuffer(data, dtype='uint8')
+        self.tstamp = time()
+
+    '''
+        0: SendData
+        1: StartStream
+    '''
+    def getType(self):
+        return self.data[0]
+
+    def getFreq(self):
+        return np.frombuffer(self.data[1:5], dtype='uint32')[0]
+
+    def getAt(self, x):
+        return self.data[x + 5]
+
+    def getData(self):
+        return self.data[5:514 + 5]
+
+nextSockId = 0
+messages = {}
+async def sendMessage(websocket, centerFreq):
+    res = np.zeros(514 * 50)
+    ct = time()
+    for (id, e) in messages.items():
+        if (e.tstamp - ct > 0.12):
+            messages.pop(id)
+            continue
+
+        cf = e.getFreq()
+        dif = cf - centerFreq
+        if abs(cf - centerFreq) <= (514 // 2) / 2:
+            for k in range(0, 257):
+                if (k + dif < 0): # TODO: Use math
+                    continue
+                if (k + dif > 0):
+                    break
+                res[2 * k    ] += e.getAt((k + dif) * 2)
+                res[2 * k + 1] += e.getAt((k + dif) * 2 + 1)
+    await websocket.send(res.tobytes())
+
+async def startStream(websocket, centerFreq, cid):
+    print(f'Start streaming to {cid}:{centerFreq}')
+    try:
+        while True:
+            ct = time()
+            await sendMessage(websocket, centerFreq)
+            nt = time()
+            print((nt - ct) * 1000)
+            # sleep(max(0.0116 - nt - ct, 0.0))
+    except websockets.ConnectionClosed:
+        print('Connection closed')
+        return
 
 async def handle_connection(websocket, path):
-    print('New connection established')
-    nextT = 0
-    ms1 = []
-    iid = 0
+    global nextSockId
+    cid = nextSockId
+    nextSockId += 1
+    print(f'New connection established {cid}')
     while True:
         try:
-            message = await websocket.recv()
-            print(f'Lm {len(message)}')
-            if (len(message)) < 100:
-                if message[0] == '0':
-                    iid = 0
-                    plt.legend()
-                    plt.show()
-                else:
-                    nextT = message[0]
-                print(f'Update {nextT}')
-            else:
-                if nextT == '2':
-                    # ar = np.frombuffer(message, dtype='float32').reshape(-1, 2)[:,0]
-                    ar = np.frombuffer(message, dtype='float32').reshape(-1, 2)
-                    plt.plot(ar, linewidth=1, label=f'2 - {iid}')
-                elif nextT == '1':
-                    ar = np.frombuffer(message, dtype='float32')
-                    plt.plot(ar, linewidth=2, label=f'1 - {iid}')
-                elif nextT == '3':
-                    ar = np.frombuffer(message, dtype='float32')
-                    plt.plot(ar / 512, linewidth=1, label=f'1 - {iid}')
-                # await websocket.send(f'Hello from server! You said: {message[0]}')
-                iid += 1
+            data = await websocket.recv()
+            formatted = Message(data)
+            if formatted.getType() == 0:
+                messages[nextSockId] = formatted
+            elif formatted.getType() == 1:
+                await startStream(websocket, formatted.getFreq(), cid)
         except websockets.ConnectionClosed:
             print('Connection closed')
             break

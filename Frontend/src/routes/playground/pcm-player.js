@@ -45,7 +45,7 @@ PCMPlayer.prototype.createContext = function() {
 
     // context needs to be resumed on iOS and Safari (or it will stay in "suspended" state)
     this.audioCtx.resume();
-    this.audioCtx.onstatechange = () => console.log(this.audioCtx.state);   // if you want to see "Running" state in console and be happy about it
+    //this.audioCtx.onstatechange = () => console.log(this.audioCtx.state);   // if you want to see "Running" state in console and be happy about it
     
     this.gainNode = this.audioCtx.createGain();
     this.gainNode.gain.value = 1;
@@ -91,9 +91,7 @@ PCMPlayer.prototype.destroy = function() {
 };
 
 PCMPlayer.prototype.flush = function() {
-  console.log(`Flus ${this.samples.length}`)
     if (!this.samples.length) return;
-  console.log("Flush")
     var bufferSource = this.audioCtx.createBufferSource(),
         length = this.samples.length / this.option.channels,
         audioBuffer = this.audioCtx.createBuffer(this.option.channels, length, this.option.sampleRate),
@@ -124,7 +122,7 @@ PCMPlayer.prototype.flush = function() {
     if (this.startTime < this.audioCtx.currentTime) {
         this.startTime = this.audioCtx.currentTime;
     }
-    console.log('start vs current '+this.startTime+' vs '+this.audioCtx.currentTime+' duration: '+audioBuffer.duration);
+    //console.log('start vs current '+this.startTime+' vs '+this.audioCtx.currentTime+' duration: '+audioBuffer.duration);
     bufferSource.buffer = audioBuffer;
     //bufferSource.connect(this.gainNode);
     bufferSource.connect(this.audioCtx.destination);

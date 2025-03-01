@@ -1,14 +1,28 @@
 import { PCMPlayer } from '/src/routes/playground/pcm-player.js';
-
 import { KissFFT, KissFFTR, loadKissFFT } from '/src/routes/login/KissFFTLoader.js';
 
-export async function playgroundOnMount() { await loadKissFFT() }
+var socket;
+export async function playgroundOnMount() { 
+  await loadKissFFT() 
+  socket = new WebSocket('ws://localhost:8080')
+  socket.onmessage = (event) => {}
+  socket.onopen = () => {console.log('Playground websocket opened')}
+  socket.onclose = () => {console.log('Playground websocket closed')}
+  socket.onerror = (error) => {console.log(`Playground websocket error ${error}`)}
+}
 
 class AudioPacket {
   constructor(type, data) {
+    if (type == undefined) {
+      console.error(`UNDEFINED TYPE ${type}`)
+    }
     this.type = type
     if (data != undefined) {
-      this.arr = data
+      if ((type == 0 && data.length != 512) || (type == 1 && data.length != 514)) {
+        console.error(`INVALID LENGTH ${type} ${data.length}`)
+      }
+      this.arr = new Float32Array(data.length)
+      this.arr.set(data)
     } else {
       if (type == 0) {
         this.arr = new Float32Array(512)
@@ -18,16 +32,19 @@ class AudioPacket {
     }
   }
 
+  toString() { return `AudioPacket {${this.type}:${this.arr.length}:${this.arr[2]}}` }
+
   freqToBin() {
   }
 
-  freqPacket(freq, amplitude, offset) {
+  static freqPacket(freq, amplitude = 1.0, offset = 0) {
     var f32 = new Float32Array(512)
-    freq *= 44100 / 512
+    freq /= 44100 / 512
     for (var i = 0; i < 512; ++i) {
-      f32[i] = Math.sin(((i + offset / (180 * 2 / 512)) / 512 * 3.1415 * 2 * freq) * amplitude)
+      f32[i] = Math.sin((i + offset) / 512 * 3.1415 * 2 * freq) * amplitude
     }
-    return f32
+    const cp = new AudioPacket(0, f32)
+    return cp
   }
 
   setInplace(p) {
@@ -37,11 +54,11 @@ class AudioPacket {
 
   setFreq(freq, amp = 1.0, offset = 0.0) {
     if (this.type == 0) {
-      console.log("Trying to set frequency on time packet!")
+      console.error("Trying to set frequency on time packet!")
       return
     } else if (this.type == 1) {
       const fft = new KissFFTR(512)
-      const cp = new AudioPacket(1, fft.forward(this.freqPacket(freq, 1.0, 0.0)))
+      const cp = new AudioPacket(1, fft.forward(AudioPacket.freqPacket(freq, 1.0, 0.0).arr))
       this.setInplace(this.add(cp))
       fft.dispose()
     }
@@ -50,7 +67,7 @@ class AudioPacket {
   toFreq() {
     if (this.type == 0) {
       const fft = new KissFFTR(512)
-      const cp = new AudioPacket(0, fft.forward(this.arr))
+      const cp = new AudioPacket(1, fft.forward(this.arr))
       fft.dispose()
       return cp
     } else if (this.type == 1) {
@@ -65,31 +82,31 @@ class AudioPacket {
       return this
     } else if (this.type == 1) {
       var fft = new KissFFTR(512)
-      const cp = new AudioPacket(0, fft.inverse(this.arr))
+      const fftinv = fft.inverse(this.arr) 
+      const cp = new AudioPacket(0)
+      for (let i = 0; i < 512; ++i) {
+        cp.arr[i] = fftinv[i] / 512.0
+      }
       fft.dispose()
       return cp
     }
   }
 
   add(p) {
-    if (this.type == 0 && p.type == 0) {
-      for (let i = 0; i < 512; ++i) { this.arr[i] += p.arr[i] }
-    } else if (this.type == 1 && p.type == 1) {
-      for (let i = 0; i < 514; ++i) { this.arr[i] += p.arr[i] }
-    } else if (this.type == 0 && p.type == 1) {
-
+    //console.log(`this add ${this.toString()} ${p.toString()}`)
+    if (this.type == 0 && p.type == 1) {
+      p.setInplace(p.toTime())
     } else if (this.type == 1 && p.type == 0) {
+      this.setInplace(this.toTime())
     }
+    //console.log(`This arr ${this.toString()}`)
+    for (let i = 0; i < 512; ++i) { this.arr[i] += p.arr[i] }
     return this
   }
 
   mult(p) {
-    if (this.type == 1) {
-      this.setInplace(this.toTime())
-    }
-    if (p.type == 1) {
-      p = p.toTime()
-    }
+    if (this.type == 1) { this.setInplace(this.toTime()) }
+    if (p.type == 1) { p.setInplace(p.toTime()) }
     if (this.type == 0 && p.type == 0) {
       for (let i = 0; i < 512; ++i) { this.arr[i] *= p.arr[i] }
     } else {
@@ -238,13 +255,13 @@ class RFElement {
       if (facet.iout == 0) {
         if (facet.link == null) {
           facet.val = new AudioPacket(0);
-          //console.log(`${this.name} ${facet} Pulled NOTHING`)
+          //console.log(`Pulled NOTHING ${this.id}.${fi} -> ${facet.link[0]}.${facet.link[1]}`)
         } else {
           facet.val = this.pl.nodes[facet.link[0]].facets[facet.link[1]].val;
           if (facet.val == undefined) {
-            console.log(`Found undefined packet! ${this.id}.${fi} -> ${facet.link[0]}.${facet.link[1]}`)
+            console.error(`Found undefined packet! ${this.id}.${fi} -> ${facet.link[0]}.${facet.link[1]}`)
           }
-          //console.log(`${this.name} ${facet} Pulled ${facet.val}`)
+          //console.log(`Pulled ${this.id}.${fi} -> ${facet.link[0]}.${facet.link[1]} ${facet.val.toString()}`)
         }
       }
     })
@@ -288,11 +305,11 @@ class RFAudio extends RFElement {
     finalArray.set(a.getChannelData(0), 512)
     finalArray.set(padding, 512 + a.length)
     this.audioData = finalArray
-    console.log(a.length, a.duration, a.sampleRate, a.numberOfChannels)
+    //console.log(a.length, a.duration, a.sampleRate, a.numberOfChannels)
   }
 
   async fetchDataFromLink(uri) {
-    console.log(`link ${uri}`)
+    //console.log(`link ${uri}`)
     let audioFile = await fetch(uri)
     await this.processAudioData(audioFile)
   }
@@ -334,12 +351,6 @@ class RFAudio extends RFElement {
   }
 
   pupdate() {
-    const cp = new AudioPacket(1)
-    cp.setFreq(400)
-    this.facets[0].val = cp
-    return
-
-    /*
     const cp = new AudioPacket(0)
     let curPos = 0
     if (this.audioData != undefined && this.lastSample < this.audioLength) {
@@ -350,7 +361,6 @@ class RFAudio extends RFElement {
       }
     }
     this.facets[0].val = cp
-    */
   }
 }
 
@@ -556,15 +566,25 @@ class RFAntenna extends RFElement {
       flushingTime: 1000
     })
     const f32 = new Float32Array(this.samples.length * 512)
-    console.log(`This sample ${this.samples.length} ${this.samples}`)
+    //console.log(`This sample ${this.samples.length}`)
+    //socket.send('4')
     for (let i = 0; i < this.samples.length; ++i) {
+      //socket.send(this.samples[i].arr)
       f32.set(this.samples[i].arr, i * 512)
     }
+    //socket.send('5')
+    //socket.send('0')
     this.ppl.feed(f32)
-    //this.ppl.flush()
+    this.ppl.flush()
+  }
+
+  destroyContextMenu() {
+    this.ppl.destroy()
   }
 
   pupdate() {
+    const tval = this.facets[0].val.toTime()
+    //socket.send(tval.arr)
     this.samples.push(this.facets[0].val.toTime())
   }
 }
@@ -630,9 +650,10 @@ class RFOscillator extends RFElement {
   }
 
   pupdate() {
-    const cp = new AudioPacket(1)
-    cp.setFreq(this.freq)
-    this.facets[0].val = cp
+    if (this.foffset == undefined) { this.foffset = 0 }
+    const cp = AudioPacket.freqPacket(440, 1.0, this.foffset * 512).toFreq()
+    this.foffset += 1
+    this.facets[0].val = cp.toFreq()
   }
 }
 
@@ -702,7 +723,7 @@ export class Playground {
   }
 
   updateNodes() {
-    return
+    //console.log("Update queued")
     for (let i of this.nodeUpdateOrder) {
       this.nodes[i].update()
     }
@@ -998,7 +1019,7 @@ export class Playground {
   }
 
   mouseMove(x, y) {
-    this.updateNodes()
+    //this.updateNodes()
     const f = this.downPose(x, y)
     const onode = this.hovernode
     const cnode = this.getNodeAtPosition(f)
@@ -1035,6 +1056,15 @@ export class Playground {
       const c1 = this.facetCenter([onode[0], onode[1] - 1])
 
       this.drawLine(c1, [x, y])
+    }
+  }
+
+  destroy() {
+    pl.nodes[5].ppl.destroy()
+    if (pl.nodes != null && pl.nodes != undefined) {
+      pl.nodes.forEach(node => {
+        if (node.contextOpen) { node.destroyContextMenu() }
+      })
     }
   }
 }
