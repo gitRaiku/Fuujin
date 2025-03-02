@@ -1,9 +1,10 @@
-let socket
+//let socket
 let sopened = false
 let readTimer
 let drawTimer
 export async function spectrumOnMount() {
-  //socket = await new WebSocket('ws://localhost:8080')
+  /*
+  socket = await new WebSocket('ws://localhost:8080')
   socket.onmessage = (event) => {}
   socket.onopen = () => {
     sopened = true
@@ -14,6 +15,7 @@ export async function spectrumOnMount() {
     clearInterval(drawTimer)
   }
   socket.onerror = (error) => {console.log(`Spectrum websocket error ${error}`)}
+  */
 }
 
 export class Spectrum {
@@ -25,23 +27,19 @@ export class Spectrum {
     this.histogram = new Array(this.histogramLength)
     for (let i = 0; i < this.histogramLength; ++i) { this.histogram[i] = new Float32Array(200) }
     this.histogramPos = 0
-    socket.onmessage = this.backendResponse
-    socket.spec = this
-    if (sopened) {
-      this.initComms()
-    } else {
-      socket.onopen = this.initComms
-    }
+    this.createWorker()
   }
 
-  initComms() {
-    let arr = new Uint8Array(5)
-    arr[0] = 1
-    arr[1] = 0
-    arr[2] = 20
-    arr[3] = 0
-    arr[4] = 0
-    socket.send(arr)
+  createWorker() {
+    if (window.Worker) {
+      this.worker = new Worker("/src/routes/playground/Worker.js");
+
+      this.worker.onmessage = (e) => {console.log(`Message received from worker ${e.data}`)}
+      this.worker.onerror = (error) => {console.log(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.destroy()}
+      this.worker.postMessage({'type': 'startReading'})
+    } else {
+      console.error("Your browser doesn't support web workers.");
+    }
   }
 
   async backendResponse(event) {
@@ -53,7 +51,7 @@ export class Spectrum {
   updateBounds(w, h) {
     this.bounding = canvas.getBoundingClientRect()
     this.canvasPos = [this.bounding.x, this.bounding.y]
-    console.log(`Updb ${this.canvasPos} ${this.canvas.width}  ${this.canvas.height}`)
+    //console.log(`Updb ${this.canvasPos} ${this.canvas.width}  ${this.canvas.height}`)
   }
 
   addFrame(data) {
@@ -84,6 +82,12 @@ export class Spectrum {
     this.ctx.rect(0, 0, canvas.width, canvas.height)
     this.ctx.fillStyle = "black"
     this.ctx.strokeStyle = "black"
+  }
+
+  destroy() {
+    if (this.worker != undefined) {
+      this.worker.terminate()
+    }
   }
 }
 

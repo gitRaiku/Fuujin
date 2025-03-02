@@ -4,11 +4,13 @@ import { KissFFT, KissFFTR, loadKissFFT } from '/src/routes/login/KissFFTLoader.
 var socket;
 export async function playgroundOnMount() { 
   await loadKissFFT() 
+  /*
   socket = new WebSocket('ws://localhost:8080')
   socket.onmessage = (event) => {}
   socket.onopen = () => {console.log('Playground websocket opened')}
   socket.onclose = () => {console.log('Playground websocket closed')}
-  socket.onerror = (error) => {console.log(`Playground websocket error ${error}`)}
+  socket.onerror = (error) => {console.log(`Playground websocket error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`)}
+  */
 }
 
 class AudioPacket {
@@ -563,9 +565,11 @@ class RFAntenna extends RFElement {
   }
 
   pupdate() {
-    const tval = this.facets[0].val.toTime()
+    const tval = this.facets[0].val
     //socket.send(tval.arr)
-    this.samples.push(this.facets[0].val.toTime())
+    this.samples.push(tval.toTime())
+    //console.log("GotMessage", tval.toString())
+    this.pl.worker.postMessage({'type': 'data', 'data': tval.toFreq()})
   }
 }
 
@@ -656,9 +660,9 @@ export class Playground {
     if (window.Worker) {
       this.worker = new Worker("/src/routes/playground/Worker.js");
 
-      this.worker.onmessage = (e) => {
-        console.log(`Message received from worker ${e.data}`);
-      };
+      this.worker.onmessage = (e) => {console.log(`Message received from worker ${e.data}`)}
+      this.worker.onerror = (error) => {console.log(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.worker.destroy()}
+      this.worker.postMessage({'type': 'startStream'})
     } else {
       console.error("Your browser doesn't support web workers.");
     }
@@ -866,6 +870,7 @@ export class Playground {
         break
       case 6:
         console.log("Started")
+        console.log(this.worker)
         this.worker.postMessage({'type':'stress'})
         console.log("Finished")
         break
@@ -1047,6 +1052,9 @@ export class Playground {
   }
 
   destroy() {
+    if (this.worker != undefined) {
+      this.worker.terminate()
+    }
     pl.nodes[5].ppl.destroy()
     if (pl.nodes != null && pl.nodes != undefined) {
       pl.nodes.forEach(node => {

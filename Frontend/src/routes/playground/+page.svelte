@@ -88,6 +88,7 @@
       <button id="node_ante">Antenna Node</button>
       <button id="node_osci">Oscillator Node</button>
       <button id="node_run">Run Node</button>
+      <button id="node_step">Step Node</button>
     </div>
   </div>
 </div>
@@ -102,9 +103,11 @@
   let spec;
   onDestroy(() => {
     if (pl != null && pl != undefined) { pl.destroy() }
+    if (spec != null && spec != undefined) { spec.destroy() }
   })
 
   onMount(() => {
+    /*
     playgroundOnMount().then(() => {
       let nodeButtons = [
         document.getElementById("node_addr"),
@@ -174,8 +177,8 @@
           pl.nextNodeType = i
         })
       }
-      })
-    /*
+      document.getElementById('node_step').addEventListener('click', () => {pl.updateNodes()})
+      })*/
     spectrumOnMount().then(() => {
       const canvas = document.getElementById("spectrumCanvas"), 
       spec = new Spectrum(canvas)
@@ -184,7 +187,7 @@
 
       window.addEventListener("scroll", (event) => {spec.updateBounds(window.innerWidth, window.innerHeight); spec.update()})
       window.addEventListener("resize", () => {spec.updateBounds(window.innerWidth, window.innerHeight); spec.update()})
-    })*/
+    })
   });
 </script>
 
