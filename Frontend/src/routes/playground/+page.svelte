@@ -61,6 +61,7 @@
       pl = new Playground(canvas, nodeButtons)
       pl.updateBounds(window.innerWidth, window.innerHeight);
 
+      /*
       pl.addNode([0.1, 0.5], 3)
       pl.addNode([0.35, 0.5], 0)
       pl.addNode([0.35, 0.2], 2)
@@ -97,7 +98,7 @@
         //}
         //pl.nodes[5].finish()
       })
-      pl.drawGraph()
+      pl.drawGraph()*/
 
       canvas.addEventListener("mousedown", (event) => {pl.mouseDown(event.offsetX, event.offsetY)})
       canvas.addEventListener("mousemove", (event) => {pl.mouseMove(event.offsetX, event.offsetY)})

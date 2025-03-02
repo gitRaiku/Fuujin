@@ -15,22 +15,29 @@ startSocket()
 let buffer = []
 
 let sloop;
+let toReset = false
 function startWebsocketLoop() {
   sloop = setInterval(() => {
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING) { console.error("Worker: Socket closed!"); stopWebsocketLoop() }
-    if (socket.readyState == WebSocket.OPEN && buffer.length > 0) {
-      let larr = new Uint8Array(5 + buffer[0].arr.length * 4)
-
-      console.log("Sending backedn res")
-      larr[0] = '0'
-      larr[1] = 0
-      larr[2] = 10
-      larr[3] = 0
-      larr[4] = 0
-      const u8 = new Uint8Array(buffer[0].arr.buffer)
-      larr.set(u8, 5)
-      socket.send(larr)
-      buffer.shift()
+    if (socket.readyState == WebSocket.OPEN) {
+      if (buffer.length > 0) {
+        toReset = true
+        let larr = new Uint8Array(5 + buffer[0].arr.length * 4)
+        //console.log("Sending backedn res")
+        larr[0] = '0'
+        larr[1] = 0
+        larr[2] = 10
+        larr[3] = 0
+        larr[4] = 0
+        const u8 = new Uint8Array(buffer[0].arr.buffer)
+        larr.set(u8, 5)
+        socket.send(larr)
+        buffer.shift()
+      } else if (toReset) {
+        socket.send(new Uint8Array([2]))
+        toReset = false
+        console.log("Reset")
+      }
     }
   }, 1)
 }
@@ -58,13 +65,14 @@ async function stressTest() {
 async function parseBackendResponse(data) {
   let ab = await data.arrayBuffer()
   const f32 = new Float32Array(ab)
-  console.log(`Got backedn res ${f32[20]}`)
+  //console.log(`Got backedn res ${f32[20]}`)
   postMessage(f32)
 }
 
 let rloop;
 async function startReadingLoop() {
   await waiter(() => { return socket.readyState == WebSocket.OPEN } )
+  console.log("STARTED READING")
   socket.send(new Uint8Array([1, 0, 10, 0, 0]))
   socket.onmessage = (event) => {parseBackendResponse(event.data)}
 }
@@ -85,6 +93,10 @@ onmessage = (e) => {
     stopReadingLoop()
     socket.close()
     startSocket()
+  } else if (e.data['type'] == 'reset') {
+    buffer = []
+    socket.send(new Uint8Array([2]))
+    console.log("Reset")
   } else if (e.data['type'] == 'stress') {
     stressTest()
   }

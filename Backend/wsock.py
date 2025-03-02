@@ -10,13 +10,15 @@ from collections import deque
 class Message:
     def __init__(self, data):
         self.type = data[0]
-        self.freq = data[1] << 24 | data[2] << 16 | data[3] << 8 | data[4]
-        self.data = np.frombuffer(data[5:], dtype='float32')
         self.tstamp = time()
+        if len(data) > 1:
+            self.freq = data[1] << 24 | data[2] << 16 | data[3] << 8 | data[4]
+            self.data = np.frombuffer(data[5:], dtype='float32')
 
     '''
         0: SendData
         1: StartStream
+        2: ResetData
     '''
     def getType(self):
         return self.type
@@ -33,20 +35,15 @@ class Message:
 nextSockId = 0
 messages = {}
 async def sendMessage(websocket, centerFreq):
-    '''
-    res = np.array(np.random.rand(514), dtype='float32')
+    '''res = np.array(np.random.rand(514) * 10, dtype='float32')
     await websocket.send(res.tobytes())
-    return
-'''
+    return'''
     res = np.zeros(514, dtype='float32')
     ct = time()
     for (id, e) in messages.items():
         while len(e) > 0 and ct - e[0].tstamp > 0.12:
-            print('popleft')
             e.popleft()
-        print(f'{len(e)}')
         if len(e) > 0:
-            print(f'{len(e)} - {ct - e[0].tstamp} - {e[0].getAt(20 * 2) * 255)} ')
             cf = e[0].getFreq()
             dif = cf - centerFreq
             dif = 0
@@ -56,8 +53,8 @@ async def sendMessage(websocket, centerFreq):
                         continue
                     if (k + dif > 257):
                         break
-                    res[2 * k    ] += 1.0 + e[0].getAt((k + dif) * 2) * 255
-                    res[2 * k + 1] += 1.0 + e[0].getAt((k + dif) * 2 + 1) * 255
+                    res[2 * k    ] += e[0].getAt((k + dif) * 2) * 255
+                    res[2 * k + 1] += e[0].getAt((k + dif) * 2 + 1) * 255
     await websocket.send(res.tobytes())
 
 async def startStream(websocket, centerFreq, cid):
@@ -97,6 +94,10 @@ async def handle_connection(websocket, path):
             elif formatted.getType() == 1:
                 print('startst')
                 await startStream(websocket, formatted.getFreq(), cid)
+            elif formatted.getType() == 2:
+                cid = nextSockId
+                print('resetCid')
+                nextSockId += 1
         except websockets.ConnectionClosed:
             print('Connection closed')
             break

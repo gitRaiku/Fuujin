@@ -526,10 +526,10 @@ class RFReciever extends RFElement {
     this.worker = new Worker("/src/routes/playground/Worker.js");
 
     this.worker.onmessage = (e) => {
-      console.log(`Message received from worker ${e.data}`)
       this.packets.push(new AudioPacket(1, e.data))
     }
     this.worker.onerror = (error) => {console.error(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.worker.terminate()}
+    this.worker.postMessage({'type': 'startReading'})
   }
 
   pdraw(pl, pos, size, col) {
@@ -559,8 +559,10 @@ class RFReciever extends RFElement {
 
   pupdate() {
     if (this.packets.length == 0) {
+      console.log(`Got packet NOTHING`)
       this.facets[0].val = new AudioPacket(0)
     } else {
+      console.log(`Got packet ${this.packets[0].toString}`)
       this.facets[0].val = this.packets[0]
       this.packets.shift()
     }
@@ -594,7 +596,12 @@ class RFAntenna extends RFElement {
     pl.ctx.stroke()
   }
 
+  reset() {
+    this.pl.worker.postMessage({'type': 'reset'})
+  }
+
   finish() {
+    if (this.ppl != undefined) { this.ppl.destroy() }
     this.ppl = new PCMPlayer({
       encoding: '32bitFloat',
       channels: 1,
@@ -602,15 +609,10 @@ class RFAntenna extends RFElement {
       flushingTime: 1000
     })
     const f32 = new Float32Array(this.samples.length * 512)
-    //console.log(`This sample ${this.samples.length}`)
-    //socket.send('4')
     for (let i = 0; i < this.samples.length; ++i) {
-      //socket.send(this.samples[i].arr)
       f32.set(this.samples[i].arr, i * 512)
     }
-    //socket.send('5')
-    //socket.send('0')
-    console.log(f32)
+    this.samples = []
     this.ppl.feed(f32)
     this.ppl.flush()
   }
@@ -623,8 +625,9 @@ class RFAntenna extends RFElement {
     const tval = this.facets[0].val
     //socket.send(tval.arr)
     this.samples.push(tval.toTime())
-    //console.log("GotMessage", tval.toString())
-    this.pl.worker.postMessage({'type': 'data', 'data': tval.toFreq()})
+    const tf = tval.toFreq()
+    //console.log("GotMessage", tf.toString())
+    this.pl.worker.postMessage({'type': 'data', 'data': tf})
   }
 }
 
@@ -931,6 +934,12 @@ export class Playground {
         for (let node of this.nodes) {
           if (node.ntype == 6) {
             node.start()
+          }
+          if (node.ntype == 3) {
+            node.lastSample = 0
+          }
+          if (node.ntype == 4) {
+            node.reset()
           }
         }
 
