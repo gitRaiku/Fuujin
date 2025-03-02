@@ -21,11 +21,11 @@ export async function spectrumOnMount() {
 export class Spectrum {
   constructor(canvas) {
     this.histogramLength = 200
-    this.histogramWidth = 514
+    this.histogramWidth = 514 / 2
     this.canvas = canvas
     this.ctx = canvas.getContext("2d");
     this.histogram = new Array(this.histogramLength)
-    for (let i = 0; i < this.histogramLength; ++i) { this.histogram[i] = new Float32Array(this.histogramWidth) }
+    for (let i = 0; i < this.histogramLength; ++i) { this.histogram[i] = new Float32Array(this.histogramWidth * 2) }
     this.histogramPos = 0
     this.createWorker()
     this.bitmapData = new Uint8ClampedArray(this.histogramWidth * this.histogramLength * 4)
@@ -49,7 +49,7 @@ export class Spectrum {
     this.canvasPos = [this.bounding.x, this.bounding.y]
     this.canvas.height = this.bounding.height
     this.canvas.width = this.bounding.width
-    console.log(`Updb ${this.canvasPos} ${this.canvas.width}  ${this.canvas.height}`)
+    //console.log(`Updb ${this.canvasPos} ${this.canvas.width}  ${this.canvas.height}`)
   }
 
   addFrame(data) {
@@ -63,7 +63,9 @@ export class Spectrum {
       const ccol = this.histogramLength - col - 1
       for (let row = 0; row < this.histogramWidth; ++row) {
         const crow = this.histogramWidth - row - 1
-        const color = this.histogram[(this.histogramPos - col + this.histogramLength) % this.histogramLength][row] * 255
+        const r = this.histogram[(this.histogramPos - col + this.histogramLength) % this.histogramLength][row * 2]
+        const i = this.histogram[(this.histogramPos - col + this.histogramLength) % this.histogramLength][row * 2 + 1]
+        const color = Math.sqrt(r * r + i * i) * 10
         this.bitmapData[(crow * this.histogramLength + ccol) * 4 + 0] = color
         this.bitmapData[(crow * this.histogramLength + ccol) * 4 + 1] = 0
         this.bitmapData[(crow * this.histogramLength + ccol) * 4 + 2] = color
@@ -73,9 +75,23 @@ export class Spectrum {
     return new ImageData(this.bitmapData, this.histogramLength, this.histogramWidth)
   }
 
-  redraw() {
+  async redraw() {
     const bmap = this.updateBitmap()
-    this.ctx.putImageData(bmap, 0, 0, 0, 0, this.canvas.width, this.canvas.height)
+    const ib = await createImageBitmap(bmap)
+    this.ctx.drawImage(ib, 0, 0, this.canvas.width, this.canvas.height)
+
+    /*
+    let can = document.createElement('canvas')
+    let ctx = can.getContext('2d')
+    ctx.width = this.histogramLength
+    ctx.height = this.histogramWidth
+    ctx.putImageData(bmap, 0, 0)
+    let img = ctx.getImageData(0, 0, this.histogramLength, this.histogramWidth)
+    can.remove()
+    console.log(img)
+    this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height)*/
+
+    //this.ctx.putImageData(bmap, 0, 0, 0, 0, this.canvas.width, this.canvas.height)
     //this.ctx.drawImage(bmap, 0, 0, this.canvas.width, this.canvas.height)
   }
 
@@ -86,6 +102,7 @@ export class Spectrum {
 
   destroy() {
     clearInterval(this.redrawer)
+    console.log("ClearInterval")
     if (this.worker != undefined) {
       this.worker.terminate()
     }

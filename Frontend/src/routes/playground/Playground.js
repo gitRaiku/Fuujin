@@ -95,13 +95,11 @@ class AudioPacket {
   }
 
   add(p) {
-    //console.log(`this add ${this.toString()} ${p.toString()}`)
     if (this.type == 0 && p.type == 1) {
       p.setInplace(p.toTime())
     } else if (this.type == 1 && p.type == 0) {
       this.setInplace(this.toTime())
     }
-    //console.log(`This arr ${this.toString()}`)
     for (let i = 0; i < 512; ++i) { this.arr[i] += p.arr[i] }
     return this
   }
@@ -164,12 +162,8 @@ class RFElement {
   }
 
   destroyContextMenu() {
-   if (this.input != undefined) {
-     this.input.remove()
-   }
-   if (this.button != undefined) {
-     this.button.remove()
-   }
+   if (this.input != undefined) {this.input.remove()}
+   if (this.button != undefined) {this.button.remove()}
   }
 
 
@@ -259,6 +253,7 @@ class RFElement {
 class RFAudio extends RFElement {
   constructor(name, pos, pl) { 
     super(name, pos, pl); 
+    this.ntype = 3
     this.x = pos[0]
     this.y = pos[1]
     this.h = 100
@@ -348,6 +343,7 @@ class RFAudio extends RFElement {
 class RFAdder extends RFElement {
   constructor(name, pos, pl) { 
     super(name, pos, pl); 
+    this.ntype = 0
     this.x = pos[0]
     this.y = pos[1]
     this.h = 100
@@ -397,6 +393,7 @@ class RFAdder extends RFElement {
 class RFMult extends RFElement {
   constructor(name, pos, pl) { 
     super(name, pos, pl); 
+    this.ntype = 1
     this.x = pos[0]
     this.y = pos[1]
     this.h = 100
@@ -441,6 +438,7 @@ class RFMult extends RFElement {
 class RFConst extends RFElement {
   constructor(name, pos, pl) { 
     super(name, pos, pl); 
+    this.ntype = 2
     this.x = pos[0]
     this.y = pos[1]
     this.h = 100
@@ -513,9 +511,66 @@ class RFConst extends RFElement {
   }
 }
 
+class RFReciever extends RFElement {
+  constructor(name, pos, pl) { 
+    super(name, pos, pl); 
+    this.ntype = 5
+    this.x = pos[0]
+    this.y = pos[1]
+    this.h = 100
+    this.w = 100
+    this.facets = [
+      {x: 50, y: 0, h: 30, w: 30, iout: 1},
+    ]
+    this.packets = []
+    this.worker = new Worker("/src/routes/playground/Worker.js");
+
+    this.worker.onmessage = (e) => {
+      console.log(`Message received from worker ${e.data}`)
+      this.packets.push(new AudioPacket(1, e.data))
+    }
+    this.worker.onerror = (error) => {console.error(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.worker.terminate()}
+  }
+
+  pdraw(pl, pos, size, col) {
+    pl.ctx.beginPath();
+    pl.ctx.lineWidth = 20;
+    pl.ctx.strokeStyle = "green";
+    const ll = pl.downSz(10, 10);
+    const sl = pl.downSz(5, 10);
+    const cl = pl.downSz(30, 10);
+    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2        )
+    pl.ctx.stroke()
+  }
+
+  destroyContextMenu() {
+    this.worker.terminate()
+  }
+
+  start() {
+    this.worker.postMessage({'type': 'startReading'})
+  }
+
+  stop() {
+    this.worker.postMessage({'type': 'stopReading'})
+  }
+
+  pupdate() {
+    if (this.packets.length == 0) {
+      this.facets[0].val = new AudioPacket(0)
+    } else {
+      this.facets[0].val = this.packets[0]
+      this.packets.shift()
+    }
+  }
+}
+
 class RFAntenna extends RFElement {
   constructor(name, pos, pl) { 
     super(name, pos, pl); 
+    this.ntype = 4
     this.x = pos[0]
     this.y = pos[1]
     this.h = 100
@@ -576,6 +631,7 @@ class RFAntenna extends RFElement {
 class RFOscillator extends RFElement {
   constructor(name, pos, pl) { 
     super(name, pos, pl); 
+    this.ntype = 5
     this.x = pos[0]
     this.y = pos[1]
     this.h = 100
@@ -869,10 +925,27 @@ export class Playground {
         this.nodes.push(new RFOscillator("Oscillator", f, this))
         break
       case 6:
-        console.log("Started")
-        console.log(this.worker)
-        this.worker.postMessage({'type':'stress'})
-        console.log("Finished")
+        this.nodes.push(new RFReciever("Reciever", f, this))
+        break
+      case 7:
+        for (let node of this.nodes) {
+          if (node.ntype == 6) {
+            node.start()
+          }
+        }
+
+        for (let i = 0; i < 1000; ++i) {
+          this.updateNodes()
+        }
+
+        for (let node of this.nodes) {
+          if (node.ntype == 6) {
+            node.stop()
+          }
+          if (node.ntype == 4) {
+            node.finish()
+          }
+        }
         break
     }
 

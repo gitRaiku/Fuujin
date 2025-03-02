@@ -19,14 +19,16 @@ function startWebsocketLoop() {
   sloop = setInterval(() => {
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING) { console.error("Worker: Socket closed!"); stopWebsocketLoop() }
     if (socket.readyState == WebSocket.OPEN && buffer.length > 0) {
-      //console.log(`Worker: Sending Buffer ${buffer.length}`)
-      let larr = new Uint8Array(5 + buffer[0].arr.length)
+      let larr = new Uint8Array(5 + buffer[0].arr.length * 4)
+
+      console.log("Sending backedn res")
       larr[0] = '0'
       larr[1] = 0
       larr[2] = 10
       larr[3] = 0
       larr[4] = 0
-      larr.set(buffer[0].arr, 5)
+      const u8 = new Uint8Array(buffer[0].arr.buffer)
+      larr.set(u8, 5)
       socket.send(larr)
       buffer.shift()
     }
@@ -34,6 +36,7 @@ function startWebsocketLoop() {
 }
 
 function stopWebsocketLoop() { clearInterval(sloop) }
+
 async function stressTest() {
   const smil = new Date().getTime()
   let iterc = 0
@@ -54,7 +57,9 @@ async function stressTest() {
 
 async function parseBackendResponse(data) {
   let ab = await data.arrayBuffer()
-  postMessage(new Float32Array(ab))
+  const f32 = new Float32Array(ab)
+  console.log(`Got backedn res ${f32[20]}`)
+  postMessage(f32)
 }
 
 let rloop;
@@ -76,6 +81,10 @@ onmessage = (e) => {
     stopWebsocketLoop()
   } else if (e.data['type'] == 'startReading') {
     startReadingLoop()
+  } else if (e.data['type'] == 'stopReading') {
+    stopReadingLoop()
+    socket.close()
+    startSocket()
   } else if (e.data['type'] == 'stress') {
     stressTest()
   }

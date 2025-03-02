@@ -9,7 +9,9 @@ from collections import deque
 
 class Message:
     def __init__(self, data):
-        self.data = np.frombuffer(data, dtype='uint8')
+        self.type = data[0]
+        self.freq = data[1] << 24 | data[2] << 16 | data[3] << 8 | data[4]
+        self.data = np.frombuffer(data[5:], dtype='float32')
         self.tstamp = time()
 
     '''
@@ -17,41 +19,45 @@ class Message:
         1: StartStream
     '''
     def getType(self):
-        return self.data[0]
+        return self.type
 
     def getFreq(self):
-        return self.data[1] << 24 | self.data[2] << 16 | self.data[3] << 8 | self.data[4]
+        return self.freq
 
     def getAt(self, x):
-        return self.data[x + 5]
+        return self.data[x]
 
     def getData(self):
-        return self.data[5:514 + 5]
+        return self.data
 
 nextSockId = 0
 messages = {}
 async def sendMessage(websocket, centerFreq):
+    '''
     res = np.array(np.random.rand(514), dtype='float32')
     await websocket.send(res.tobytes())
     return
-    res = np.zeros(514 * 50)
+'''
+    res = np.zeros(514, dtype='float32')
     ct = time()
     for (id, e) in messages.items():
-        print(f'kmskmskm {id} {e}')
-        if (e.tstamp - ct > 0.12):
-            messages.pop(id)
-            continue
-
-        cf = e.getFreq()
-        dif = cf - centerFreq
-        if abs(cf - centerFreq) <= (514 // 2) / 2:
-            for k in range(0, 257):
-                if (k + dif < 0): # TODO: Use math
-                    continue
-                if (k + dif > 0):
-                    break
-                res[2 * k    ] += e.getAt((k + dif) * 2)
-                res[2 * k + 1] += e.getAt((k + dif) * 2 + 1)
+        while len(e) > 0 and ct - e[0].tstamp > 0.12:
+            print('popleft')
+            e.popleft()
+        print(f'{len(e)}')
+        if len(e) > 0:
+            print(f'{len(e)} - {ct - e[0].tstamp} - {e[0].getAt(20 * 2) * 255)} ')
+            cf = e[0].getFreq()
+            dif = cf - centerFreq
+            dif = 0
+            if abs(dif) <= (514 // 2) // 2:
+                for k in range(0, 257):
+                    if (k + dif < 0): # TODO: Use math
+                        continue
+                    if (k + dif > 257):
+                        break
+                    res[2 * k    ] += 1.0 + e[0].getAt((k + dif) * 2) * 255
+                    res[2 * k + 1] += 1.0 + e[0].getAt((k + dif) * 2 + 1) * 255
     await websocket.send(res.tobytes())
 
 async def startStream(websocket, centerFreq, cid):
@@ -81,10 +87,13 @@ async def handle_connection(websocket, path):
                 if cid not in messages.keys():
                     messages[cid] = deque()
                 messages[cid].append(formatted)
+                # plt.plot(formatted.getData())
+                # plt.show()
                 if len(messages[cid]) == 1:
+                    print('stime')
                     messages[cid][0].tstamp = time()
                 else:
-                    messages[cid][-1].tstamp = messages[cid][-2].tstamp + (44100/512)
+                    messages[cid][-1].tstamp = messages[cid][-2].tstamp + (512/44100)
             elif formatted.getType() == 1:
                 print('startst')
                 await startStream(websocket, formatted.getFreq(), cid)

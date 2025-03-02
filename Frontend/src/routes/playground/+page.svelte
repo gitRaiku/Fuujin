@@ -1,20 +1,13 @@
 <style>
-
-
-
-
-
   canvas {
     height: 100%;
     width: 100%;
   }
 
-  
   :global(button.buttonSelected) {
     color: black;
     background: white;
   }
-
 </style>
 
 
@@ -32,6 +25,7 @@
       <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_osci">Oscillator Node</button>
       <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all"id="node_run">Run Node</button>
       <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_step">Step Node</button>
+      <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_recv">Reciever Node</button>
     </div>
   </div>
 </div>
@@ -50,7 +44,6 @@
   })
 
   onMount(() => {
-
     playgroundOnMount().then(() => {
       let nodeButtons = [
         document.getElementById("node_addr"),
@@ -59,6 +52,7 @@
         document.getElementById("node_audi"),
         document.getElementById("node_ante"),
         document.getElementById("node_osci"),
+        document.getElementById("node_recv"),
         document.getElementById("node_run")
       ]
 
@@ -98,9 +92,9 @@
         pl.linkFacets([0, 0], [5, 0])
       }
       pl.nodes[0].fetchDataFromLink('/src/lib/amirmi.wav').then( () => {
-        for (let i = 0; i < 500; ++i) {
-          pl.updateNodes()
-        }
+        //for (let i = 0; i < 2000; ++i) {
+          //pl.updateNodes()
+        //}
         //pl.nodes[5].finish()
       })
       pl.drawGraph()
@@ -123,7 +117,7 @@
       document.getElementById('node_step').addEventListener('click', () => {pl.updateNodes()})
       })
     spectrumOnMount().then(() => {
-      const canvas = document.getElementById("spectrumCanvas"), 
+      const canvas = document.getElementById("spectrumCanvas");
       spec = new Spectrum(canvas)
       spec.updateBounds(window.innerWidth, window.innerHeight);
       spec.update()
