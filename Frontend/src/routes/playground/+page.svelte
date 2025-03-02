@@ -1,100 +1,43 @@
 <style>
-  .playground-top {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 100%;
-    border: 2px solid green;
-    padding: 10%;
-    padding-top: 5%;
-  }
 
-  .playground {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 10%;
-    border: 3px solid white;
-    height: 100%;
-    width: 100%;
-  }
 
-  .plcanvas {
-    width: 80%;
-    height: 80%;
-    border: 6px solid black;
-  }
 
-  .speccanvas {
-    width: 80%;
-    height: 20%;
-    border: 6px solid black;
-  }
 
-  .plbuttons {
-    max-width: 80%;
-    max-height: 20%;
-    border: 2px solid purple;
-  }
 
   canvas {
     height: 100%;
     width: 100%;
   }
 
-  button {
-    padding: 12px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    color: white;
-    background: #007BFF; /* Primary color */
-    border: 2px solid #0056b3; /* Darker border */
-    border-radius: 0px;
-    cursor: pointer;
-    transition: background 0.3s, border-color 0.3s, transform 0.2s;
-  }
   
   :global(button.buttonSelected) {
     color: black;
     background: white;
   }
 
-  button:hover {
-    background: #0056b3; /* Darker shade on hover */
-    border-color: #004080;
-    transform: scale(1.05); /* Slight pop effect */
-  }
-
-  button:active {
-    background: #003d66; /* Even darker on click */
-    transform: scale(0.98);
-  }
 </style>
 
-<Header />
 
-<div class="playground-top">
-  <div class="playground">
-    <div class="speccanvas"><canvas id="spectrumCanvas"></canvas></div>
-    <div class="plcanvas"><canvas id="canvas"></canvas></div>
+<div class="flex flex-col justify-start items-center w-full h-full">
+  <div class="flex flex-col items-center justify-center h-[80%] w-full mt-20">
+    <div class="border border-ghost w-[80%] h-[20%]"><canvas id="spectrumCanvas" class="w-[100%] object-fill"></canvas></div>
+    <div class="w-[80%] h-[80%] border border-t-0 border-ghost"><canvas id="canvas"></canvas></div>
 
-    <div id="controls" class="plbuttons">
-      <button id="node_addr" class="buttonSelected">Adder Node</button>
-      <button id="node_mult">Multiplier Node</button>
-      <button id="node_cnst">Constant Node</button>
-      <button id="node_audi">Audio Node</button>
-      <button id="node_ante">Antenna Node</button>
-      <button id="node_osci">Oscillator Node</button>
-      <button id="node_run">Run Node</button>
-      <button id="node_step">Step Node</button>
+    <div id="controls" class="w-[80%] h-auto p-3  gap-x-5 flex flex-row items-center justify-center">
+      <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_addr" >Adder Node</button>
+      <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_mult">Multiplier Node</button>
+      <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_cnst">Constant Node</button>
+      <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_audi">Audio Node</button>
+      <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_ante">Antenna Node</button>
+      <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_osci">Oscillator Node</button>
+      <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all"id="node_run">Run Node</button>
+      <button class="text-center text-xl w-auto bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_step">Step Node</button>
     </div>
   </div>
 </div>
 
 <script>
-  import Header from "$lib/Header.svelte";
+  import "../../app.css";
   import { onMount, onDestroy } from 'svelte';
   import { Spectrum, spectrumOnMount } from './Spectrum.js';
   import { Playground, playgroundOnMount } from './Playground.js';
@@ -107,6 +50,7 @@
   })
 
   onMount(() => {
+
     playgroundOnMount().then(() => {
       let nodeButtons = [
         document.getElementById("node_addr"),
@@ -179,10 +123,9 @@
       document.getElementById('node_step').addEventListener('click', () => {pl.updateNodes()})
       })
     spectrumOnMount().then(() => {
-      const canvas = document.getElementById("spectrumCanvas")
+      const canvas = document.getElementById("spectrumCanvas"), 
       spec = new Spectrum(canvas)
-      console.log(`Create spec ${spec}`)
-      spec.updateBounds(window.innerWidth, window.innerHeight)
+      spec.updateBounds(window.innerWidth, window.innerHeight);
       spec.update()
 
       window.addEventListener("scroll", (event) => {spec.updateBounds(window.innerWidth, window.innerHeight); spec.update()})

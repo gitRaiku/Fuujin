@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from time import time, sleep
+from collections import deque
 
 class Message:
     def __init__(self, data):
@@ -19,7 +20,7 @@ class Message:
         return self.data[0]
 
     def getFreq(self):
-        return np.frombuffer(self.data[1:5], dtype='uint32')[0]
+        return self.data[1] << 24 | self.data[2] << 16 | self.data[3] << 8 | self.data[4]
 
     def getAt(self, x):
         return self.data[x + 5]
@@ -62,9 +63,7 @@ async def startStream(websocket, centerFreq, cid):
             st = time()
             await sendMessage(websocket, centerFreq)
             ct = time()
-            sleep(0.012 - (ct - st))
-            if (kms == 100000):
-                break
+            await asyncio.sleep(0.012 - (ct - st))
     except websockets.ConnectionClosed:
         print('Connection closed')
         return
@@ -79,7 +78,13 @@ async def handle_connection(websocket, path):
             data = await websocket.recv()
             formatted = Message(data)
             if formatted.getType() == 0:
-                messages[nextSockId] = formatted
+                if cid not in messages.keys():
+                    messages[cid] = deque()
+                messages[cid].append(formatted)
+                if len(messages[cid]) == 1:
+                    messages[cid][0].tstamp = time()
+                else:
+                    messages[cid][-1].tstamp = messages[cid][-2].tstamp + (44100/512)
             elif formatted.getType() == 1:
                 print('startst')
                 await startStream(websocket, formatted.getFreq(), cid)

@@ -10,66 +10,16 @@
   });
 </script>
 
-<header class={scrolled ? "scrolled" : ""}>
-  <h1 class="logo">Fuujin</h1>
+<header class={`text-fg p-3 pl-5 pr-5 flex flex-row items-center justify-between ${scrolled ? "scrolled" : ""}`}>
+  <a href="/" class="bg-ghost p-2 pl-5 pr-5 font-black text-xl rounded-md hover:text-primary transition-all">ඞ Fuujin</a>
 
-  <nav>
-    <a href="/playground">Playground</a>
-    <a href="/learn">Learn</a>
-    <a href="/login">Login</a>
+  <nav class="flex flex-row items-center justify-center gap-x-5 text-xl p-2  pr-4 pl-4 bg-ghost rounded-md">
+    <a class="hover:font-bold hover:text-secondary transition-all" href="/playground">Playground</a>
+    <a class="hover:font-bold hover:text-secondary transition-all" href="/learn">Learn</a>
+    <a class="hover:font-bold hover:text-secondary transition-all" href="/login">Login</a>
   </nav>
 </header>
 
 <style>
-  header {
-    position: sticky;
-    top: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2.5rem;
-    background: rgba(0, 0, 0); /* Semi-transparent background */
-    color: white;
-    transition: all 0.3s;
-  }
-
-  header.scrolled {
-    background: black; /* Solid black when scrolling */
-  }
-
-  .logo {
-    font-size: 1.8rem;
-    font-weight: bold;
-  }
-
-  nav {
-    display: flex;
-    gap: 1.5rem;
-  }
-
-  nav a {
-    text-decoration: none;
-    color: white;
-    font-size: 1.2rem;
-    transition: 0.2s;
-  }
-
-  nav a:hover {
-    color: #ffcc00;
-  }
-
-  /* Responsive for small screens */
-  @media (max-width: 600px) {
-    header {
-      flex-direction: column;
-      text-align: center;
-    }
-
-    nav {
-      margin-top: 0.5rem;
-    }
-  }
 </style>
 

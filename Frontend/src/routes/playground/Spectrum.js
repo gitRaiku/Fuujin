@@ -29,9 +29,7 @@ export class Spectrum {
     this.histogramPos = 0
     this.createWorker()
     this.bitmapData = new Uint8ClampedArray(this.histogramWidth * this.histogramLength * 4)
-    this.redrawer = setInterval(() => {
-      this.redraw()
-    }, 10)
+    this.redrawer = setInterval(() => {this.redraw()}, 10)
   }
 
   createWorker() {
@@ -49,7 +47,9 @@ export class Spectrum {
   updateBounds(w, h) {
     this.bounding = this.canvas.getBoundingClientRect()
     this.canvasPos = [this.bounding.x, this.bounding.y]
-    //console.log(`Updb ${this.canvasPos} ${this.canvas.width}  ${this.canvas.height}`)
+    this.canvas.height = this.bounding.height
+    this.canvas.width = this.bounding.width
+    console.log(`Updb ${this.canvasPos} ${this.canvas.width}  ${this.canvas.height}`)
   }
 
   addFrame(data) {
@@ -59,36 +59,24 @@ export class Spectrum {
   }
 
   updateBitmap() {
-    for (let row = 0; row < this.histogramWidth; ++row) {
-      for (let col = 0; col < this.histogramLength; ++col) {
+    for (let col = 0; col < this.histogramLength; ++col) {
+      const ccol = this.histogramLength - col - 1
+      for (let row = 0; row < this.histogramWidth; ++row) {
+        const crow = this.histogramWidth - row - 1
         const color = this.histogram[(this.histogramPos - col + this.histogramLength) % this.histogramLength][row] * 255
-        this.bitmapData[(row * this.histogramLength + col) * 4 + 0] = color
-        this.bitmapData[(row * this.histogramLength + col) * 4 + 1] = color
-        this.bitmapData[(row * this.histogramLength + col) * 4 + 2] = color
-        this.bitmapData[(row * this.histogramLength + col) * 4 + 3] = 255
+        this.bitmapData[(crow * this.histogramLength + ccol) * 4 + 0] = color
+        this.bitmapData[(crow * this.histogramLength + ccol) * 4 + 1] = 0
+        this.bitmapData[(crow * this.histogramLength + ccol) * 4 + 2] = color
+        this.bitmapData[(crow * this.histogramLength + ccol) * 4 + 3] = 255
       }
     }
-    console.log(`Redraw ${this.bitmapData.length} ${this.histogramWidth}`)
-    return new ImageData(this.bitmapData, this.histogramWidth, this.histogramLength)
+    return new ImageData(this.bitmapData, this.histogramLength, this.histogramWidth)
   }
 
   redraw() {
-    //console.log(`HP ${this.histogramPos}`)
     const bmap = this.updateBitmap()
-    this.ctx.putImageData(bmap, 0, 0)
-
-    return 
-    const pw = this.canvas.width / this.histogramLength
-    const ph = this.canvas.height / this.histogramWidth
-    for (let col = 0; col < this.histogramLength; ++col) {
-      const cxp = pw * this.histogramLength - pw * (col + 1)
-      for (let row = 0; row < this.histogramWidth; ++row) {
-        const cyp = ph * this.histogramWidth - ph * (row + 1)
-        const color = this.histogram[(this.histogramPos - col + this.histogramLength) % this.histogramLength][row] * 255
-        this.ctx.fillStyle = `rgb(${color}, ${color}, ${color})` 
-        this.ctx.fillRect(cxp, cyp, pw + 1, ph)
-      }
-    }
+    this.ctx.putImageData(bmap, 0, 0, 0, 0, this.canvas.width, this.canvas.height)
+    //this.ctx.drawImage(bmap, 0, 0, this.canvas.width, this.canvas.height)
   }
 
   update() {

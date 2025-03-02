@@ -20,7 +20,14 @@ function startWebsocketLoop() {
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING) { console.error("Worker: Socket closed!"); stopWebsocketLoop() }
     if (socket.readyState == WebSocket.OPEN && buffer.length > 0) {
       //console.log(`Worker: Sending Buffer ${buffer.length}`)
-      socket.send(buffer[0].arr)
+      let larr = new Uint8Array(5 + buffer[0].arr.length)
+      larr[0] = '0'
+      larr[1] = 0
+      larr[2] = 10
+      larr[3] = 0
+      larr[4] = 0
+      larr.set(buffer[0].arr, 5)
+      socket.send(larr)
       buffer.shift()
     }
   }, 1)
@@ -59,7 +66,7 @@ async function startReadingLoop() {
 function stopReadingLoop() { clearInterval(rloop) }
 
 onmessage = (e) => {
-  console.log(`Worker log: ${e.data}`)
+  //console.log(`Worker log: ${e.data}`)
   if (e.data['type'] == 'data') {
     buffer.push(e.data['data'])
     //socket = e.data['socket']

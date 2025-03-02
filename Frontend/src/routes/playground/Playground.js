@@ -661,7 +661,7 @@ export class Playground {
       this.worker = new Worker("/src/routes/playground/Worker.js");
 
       this.worker.onmessage = (e) => {console.log(`Message received from worker ${e.data}`)}
-      this.worker.onerror = (error) => {console.log(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.worker.destroy()}
+      this.worker.onerror = (error) => {console.error(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.worker.terminate()}
       this.worker.postMessage({'type': 'startStream'})
     } else {
       console.error("Your browser doesn't support web workers.");
