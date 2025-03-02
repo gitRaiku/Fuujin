@@ -1,22 +1,7 @@
-//let socket;
-
+let socket;
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-async function waiter(func) {
-  while (!func()) {
-    await sleep(100)
-  }
-
-  /*
-  return await new Promise(resolve => {
-    if (func()) { 
-      resolve() 
-    } else {
-      setTimeout(waiter(func), 100)
-    }
-  })
-  */
-}
+async function waiter(func) { while (!func()) { await sleep(100) } }
 
 async function startSocket() {
   socket = new WebSocket('ws://localhost:8080')
@@ -34,7 +19,7 @@ function startWebsocketLoop() {
   sloop = setInterval(() => {
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING) { console.error("Worker: Socket closed!"); stopWebsocketLoop() }
     if (socket.readyState == WebSocket.OPEN && buffer.length > 0) {
-      console.log(`Worker: Sending Buffer ${buffer.length}`)
+      //console.log(`Worker: Sending Buffer ${buffer.length}`)
       socket.send(buffer[0].arr)
       buffer.shift()
     }
@@ -45,13 +30,13 @@ function stopWebsocketLoop() { clearInterval(sloop) }
 async function stressTest() {
   const smil = new Date().getTime()
   let iterc = 0
-  const f32 = new Float32Array(520 * 4);
+  const f32 = new Float32Array(520 * 4)
   console.log("Start update")
   let cs = 0
 
   let inn = setInterval(() => {
     const cmil = new Date().getTime()
-    if (cmil - smil > cs * 1000) {console.log(`Reached ${cs} ${cmil} ${smil} ${iterc} ${iterc/cs}`); cs += 1; }
+    if (cmil - smil > cs * 1000) { console.log(`Reached ${cs} ${cmil} ${smil} ${iterc} ${iterc/cs}`); cs += 1; }
     if (cmil - smil > 4000) { clearInterval(inn) }
     socket.send(f32)
     ++iterc
@@ -60,22 +45,16 @@ async function stressTest() {
   console.log(`Update in 4s ${iterc/4}`)
 }
 
+async function parseBackendResponse(data) {
+  let ab = await data.arrayBuffer()
+  postMessage(new Float32Array(ab))
+}
+
 let rloop;
 async function startReadingLoop() {
-  await waiter(() => {socket.state != WebSocket.OPENING})
+  await waiter(() => { return socket.readyState == WebSocket.OPEN } )
   socket.send(new Uint8Array([1, 0, 10, 0, 0]))
-  socket.onmessage = (event) => {
-    console.log(`Got mes ${event.data}`)
-  }
-  /*
-  rloop = setInterval(() => {
-    if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING) { console.error("Worker: Socket closed!"); stopReadingLoop() }
-    if (socket.readyState == WebSocket.OPEN) {
-      socket.
-      socket.send(buffer[0].arr)
-      buffer.shift()
-    }
-  }, 1)*/
+  socket.onmessage = (event) => {parseBackendResponse(event.data)}
 }
 function stopReadingLoop() { clearInterval(rloop) }
 
@@ -93,5 +72,5 @@ onmessage = (e) => {
   } else if (e.data['type'] == 'stress') {
     stressTest()
   }
-};
+}
 

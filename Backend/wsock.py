@@ -30,9 +30,13 @@ class Message:
 nextSockId = 0
 messages = {}
 async def sendMessage(websocket, centerFreq):
+    res = np.array(np.random.rand(514), dtype='float32')
+    await websocket.send(res.tobytes())
+    return
     res = np.zeros(514 * 50)
     ct = time()
     for (id, e) in messages.items():
+        print(f'kmskmskm {id} {e}')
         if (e.tstamp - ct > 0.12):
             messages.pop(id)
             continue
@@ -51,13 +55,16 @@ async def sendMessage(websocket, centerFreq):
 
 async def startStream(websocket, centerFreq, cid):
     print(f'Start streaming to {cid}:{centerFreq}')
+    kms = 0
     try:
         while True:
-            ct = time()
+            kms += 1
+            st = time()
             await sendMessage(websocket, centerFreq)
-            nt = time()
-            print((nt - ct) * 1000)
-            # sleep(max(0.0116 - nt - ct, 0.0))
+            ct = time()
+            sleep(0.012 - (ct - st))
+            if (kms == 100000):
+                break
     except websockets.ConnectionClosed:
         print('Connection closed')
         return
@@ -67,16 +74,14 @@ async def handle_connection(websocket, path):
     cid = nextSockId
     nextSockId += 1
     print(f'New connection established {cid}')
-    messages[cid] = 0
     while True:
         try:
             data = await websocket.recv()
-            messages[cid] += 1
-            print(f'Message {messages[cid]}', end='\r')
             formatted = Message(data)
             if formatted.getType() == 0:
                 messages[nextSockId] = formatted
             elif formatted.getType() == 1:
+                print('startst')
                 await startStream(websocket, formatted.getFreq(), cid)
         except websockets.ConnectionClosed:
             print('Connection closed')
