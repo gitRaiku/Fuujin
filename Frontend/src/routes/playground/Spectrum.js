@@ -3,7 +3,7 @@ let sopened = false
 let readTimer
 let drawTimer
 export async function spectrumOnMount() {
-  socket = await new WebSocket('ws://localhost:8080')
+  //socket = await new WebSocket('ws://localhost:8080')
   socket.onmessage = (event) => {}
   socket.onopen = () => {
     sopened = true
@@ -45,7 +45,9 @@ export class Spectrum {
   }
 
   async backendResponse(event) {
-    this.spec.addFrame(new Float32Array(await event.data.arrayBuffer()))
+    const f32 = new Float32Array(await event.data.arrayBuffer())
+    //if f32.len
+    //this.spec.addFrame()
   }
 
   updateBounds(w, h) {

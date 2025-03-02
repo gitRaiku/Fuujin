@@ -130,14 +130,15 @@
       pl.addNode([0.1, 0.2], 5)
       if (1) {
         if (1) {
-          pl.linkFacets([6, 0], [1, 0])
-          pl.linkFacets([2, 0], [1, 1])
+          pl.linkFacets([6, 0], [3, 1])
+          pl.linkFacets([2, 0], [1, 0])
+          pl.linkFacets([0, 0], [1, 1])
           pl.linkFacets([1, 2], [3, 0])
-          pl.linkFacets([4, 0], [3, 1])
+          // pl.linkFacets([4, 0], [3, 1])
           pl.linkFacets([3, 2], [5, 0])
           pl.nodes[2].constant = 0.0
           pl.nodes[4].constant = 1.0
-          pl.nodes[6].freq = 200.0
+          pl.nodes[6].freq = 2000.0
         } else {
           pl.linkFacets([0, 0], [1, 0])
           pl.linkFacets([2, 0], [1, 1])
@@ -151,7 +152,7 @@
         pl.linkFacets([0, 0], [5, 0])
       }
       pl.nodes[0].fetchDataFromLink('/src/lib/amirmi.wav').then( () => {
-        for (let i = 0; i < 20; ++i) {
+        for (let i = 0; i < 500; ++i) {
           pl.updateNodes()
         }
         //pl.nodes[5].finish()
@@ -174,6 +175,7 @@
         })
       }
       })
+    /*
     spectrumOnMount().then(() => {
       const canvas = document.getElementById("spectrumCanvas"), 
       spec = new Spectrum(canvas)
@@ -182,8 +184,7 @@
 
       window.addEventListener("scroll", (event) => {spec.updateBounds(window.innerWidth, window.innerHeight); spec.update()})
       window.addEventListener("resize", () => {spec.updateBounds(window.innerWidth, window.innerHeight); spec.update()})
-
-    })
+    })*/
   });
 </script>
 

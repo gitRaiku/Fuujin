@@ -182,27 +182,6 @@ class RFElement {
   }
 
   initContextMenu() { }
-  /*
-  initContextMenu() {
-    this.input.style.position = 'fixed'
-    this.input.type = 'text'
-    this.input.pl = this.pl
-
-    this.input.style.width = (tsz[0]) + 'px'
-    this.input.style.height = (tsz[1]) + 'px'
-    this.input.style.visibility = 'visible'
-    this.input.style.border = 'none'
-    this.input.style.outline = 'none'
-    this.input.style.background = 'white'
-    this.input.style.color = 'black'
-    this.input.value = '123'
-
-    this.input.onkeydown = this.inputHandleInput
-    this.input.onfocus = this.inputHandleFocus
-    document.body.appendChild(this.input)
-  }*/
-
-  //destroyContextMenu() { this.input.remove() }
   destroyContextMenu() { }
 
   drawContextMenu(pl, pos) {
@@ -252,7 +231,7 @@ class RFElement {
 
   pullVals() {
     this.facets.forEach((facet, fi) => {
-      if (facet.iout == 0) {
+      if (facet.iout == 0 || facet.iout == 2) {
         if (facet.link == null) {
           facet.val = new AudioPacket(0);
           //console.log(`Pulled NOTHING ${this.id}.${fi} -> ${facet.link[0]}.${facet.link[1]}`)
@@ -574,6 +553,7 @@ class RFAntenna extends RFElement {
     }
     //socket.send('5')
     //socket.send('0')
+    console.log(f32)
     this.ppl.feed(f32)
     this.ppl.flush()
   }
@@ -601,6 +581,7 @@ class RFOscillator extends RFElement {
     ]
     this.samples = []
     this.freq = 0.0
+    this.amplitude = 0.4
   }
 
   initContextMenu() {
@@ -651,7 +632,7 @@ class RFOscillator extends RFElement {
 
   pupdate() {
     if (this.foffset == undefined) { this.foffset = 0 }
-    const cp = AudioPacket.freqPacket(440, 1.0, this.foffset * 512).toFreq()
+    const cp = AudioPacket.freqPacket(this.freq, this.amplitude, this.foffset * 512).toFreq()
     this.foffset += 1
     this.facets[0].val = cp.toFreq()
   }
@@ -668,6 +649,19 @@ export class Playground {
     this.nodeButtons = nodeButtons
     this.nodeUpdateOrder = [] 
     this.nextid = 0
+    this.createWorker()
+  }
+
+  createWorker() {
+    if (window.Worker) {
+      this.worker = new Worker("/src/routes/playground/Worker.js");
+
+      this.worker.onmessage = (e) => {
+        console.log(`Message received from worker ${e.data}`);
+      };
+    } else {
+      console.error("Your browser doesn't support web workers.");
+    }
   }
 
   updateNodeUpdateOrder() {
@@ -871,16 +865,9 @@ export class Playground {
         this.nodes.push(new RFOscillator("Oscillator", f, this))
         break
       case 6:
-        const smil = new Date().getTime()
-        let iterc = 0
-        console.log("Start update")
-        while (true) {
-          const cmil = new Date().getTime()
-          if (cmil - smil > 4000) { break }
-          this.updateNodes()
-          ++iterc
-        }
-        console.log(`Update in 4s ${iterc/4}`)
+        console.log("Started")
+        this.worker.postMessage({'type':'stress'})
+        console.log("Finished")
         break
     }
 

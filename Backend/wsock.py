@@ -67,9 +67,12 @@ async def handle_connection(websocket, path):
     cid = nextSockId
     nextSockId += 1
     print(f'New connection established {cid}')
+    messages[cid] = 0
     while True:
         try:
             data = await websocket.recv()
+            messages[cid] += 1
+            print(f'Message {messages[cid]}', end='\r')
             formatted = Message(data)
             if formatted.getType() == 0:
                 messages[nextSockId] = formatted
