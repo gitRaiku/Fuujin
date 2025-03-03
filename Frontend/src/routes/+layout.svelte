@@ -8,7 +8,7 @@
     <Header/>
 </header>
 
-<main class="v-[100vw] h-[100vh]">
+<main class="text-fg v-[100vw] h-[100vh]">
     <slot/>
 </main>
 

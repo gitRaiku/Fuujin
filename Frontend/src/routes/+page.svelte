@@ -1,4 +1,4 @@
-<div class="w-[100vw] h-[92vh] mt-32 flex flex-col items-center justify-start text-white">
+<div class="w-[100vw] h-[92vh] mt-32 flex flex-col items-center justify-start">
     <h1 class="text-7xl font-black mb-12">ඞ Fuujin</h1>
     <p class="text-3xl"> Capital Galateana C.G. </p>
     
