@@ -216,6 +216,8 @@ class RFElement {
       this.button.style.top = (this.pl.canvasPos[1] + tpos[1]) + 'px'
     }
     this.drawSquircle(pl, cpos, csz, 1, "#FFFFFF")
+    pl.ctx.fillStyle = "#DABADA"
+    pl.ctx.fill()
     this.drawText(pl, [tpos[0], tpos[1] - 40], this.name)
   }
 
@@ -356,6 +358,30 @@ class RFAudio extends RFElement {
 
   pdraw(pl, pos, size, col) {
     this.drawSquircle(pl, pos, size, 2, col)
+    pl.ctx.strokeStyle = col
+    pl.ctx.fillStyle = col
+
+    const off = [-4, 2]
+
+    pl.ctx.beginPath();
+    pl.ctx.ellipse(pos[0] - 25 + off[0], pos[1] + 20 + off[1], 20, 15, 0, 0, Math.PI * 2);
+    pl.ctx.fill();
+
+    pl.ctx.beginPath();
+    pl.ctx.moveTo(pos[0] - 10 + off[0], pos[1] + 20 + off[1]);
+    pl.ctx.lineTo(pos[0] - 10 + off[0], pos[1] - 40 + off[1]);
+    pl.ctx.lineWidth = 6;
+    pl.ctx.stroke();
+
+    pl.ctx.beginPath();
+    pl.ctx.moveTo(pos[0] - 10 + off[0], pos[1] - 40 + off[1]);
+    pl.ctx.bezierCurveTo(
+      pos[0] + 10 + off[0], pos[1] - 20 + off[1],
+      pos[0] + 10 + off[0], pos[1] - 20 + off[1],
+      pos[0] - 10 + off[0], pos[1] - 10 + off[1]
+    );
+    pl.ctx.lineWidth = 4;
+    pl.ctx.stroke();
   }
 
   isRunning() { return this.lastSample < this.audioLength }
@@ -467,11 +493,11 @@ class RFMult extends RFElement {
     this.x = pos[0]
     this.y = pos[1]
     this.h = 100
-    this.w = 100
+    this.w = 150
     this.facets = [
-      {x: -50, y: 0, h: 30, w: 30, iout: 0},
+      {x: -75, y: 0, h: 30, w: 30, iout: 0},
       {x: 0, y: -50, h: 30, w: 30, iout: 0},
-      {x: 50, y: 0, h: 30, w: 30, iout: 1},
+      {x: 75, y: 0, h: 30, w: 30, iout: 1},
     ]
   }
 
@@ -479,24 +505,33 @@ class RFMult extends RFElement {
 
   pdraw(pl, pos, size, col) {
     this.drawSquircle(pl, pos, size, 2, col)
+    const [x, y] = pos;
+    const sz = 10;
+    const dl = 8;
+    const ds = 5;
+
     pl.ctx.beginPath();
     pl.ctx.strokeStyle = col;
+    pl.ctx.fillStyle = col;
     pl.ctx.lineWidth = 2;
-    const ll = pl.downSz(10, 10);
-    const sl = pl.downSz(5, 10);
-    const cl = pl.downSz(30, 10);
-    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] + sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] + sl[0] / 2 + ll[0])
-    pl.ctx.lineTo(pos[0] - sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] - sl[0] / 2        , pos[1] - sl[0] / 2 - ll[0])
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2 - ll[0])
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.stroke()
+    pl.ctx.arc(x, y, 30, 0, Math.PI * 2);
+    pl.ctx.stroke();
+
     pl.ctx.beginPath();
-    pl.ctx.arc(pos[0], pos[1], cl[0], 0, 2 * Math.PI)
+    pl.ctx.moveTo(x          , y - ds     );
+    pl.ctx.lineTo(x      + dl, y - ds - dl);
+    pl.ctx.lineTo(x + ds + dl, y      - dl);
+    pl.ctx.lineTo(x + ds     , y          );
+    pl.ctx.lineTo(x + ds + dl, y      + dl);
+    pl.ctx.lineTo(x      + dl, y + ds + dl);
+    pl.ctx.lineTo(x          , y + ds     );
+    pl.ctx.lineTo(x      - dl, y + ds + dl);
+
+    pl.ctx.lineTo(x - ds - dl, y      + dl);
+    pl.ctx.lineTo(x - ds     , y          );
+    pl.ctx.lineTo(x - ds - dl, y      - dl);
+    pl.ctx.lineTo(x      - dl, y - ds - dl);
+    pl.ctx.lineTo(x          , y - ds     );
     pl.ctx.stroke()
   }
 
@@ -556,19 +591,33 @@ class RFConst extends RFElement {
     this.drawSquircle(pl, pos, size, 2, col)
     pl.ctx.beginPath();
     pl.ctx.strokeStyle = col;
+    pl.ctx.fillStyle = col;
     pl.ctx.lineWidth = 2;
-    const ll = pl.downSz(10, 10);
-    const sl = pl.downSz(5, 10);
-    const cl = pl.downSz(30, 10);
-    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] + sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2 - ll[0])
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.stroke()
+
+    const [x, y] = pos;
+    const w = 26;
+    const h = 10;
+    const s = 6;
+
     pl.ctx.beginPath();
-    pl.ctx.arc(pos[0], pos[1], cl[0], 0, 2 * Math.PI)
+    pl.ctx.lineWidth = 2;
+    pl.ctx.arc(x, y, 30, 0, Math.PI * 2);
+    pl.ctx.stroke();
+
+    pl.ctx.beginPath();
+    pl.ctx.moveTo(x - w / 2, y - s / 2);
+    pl.ctx.lineTo(x + w / 2, y - s / 2);
+    pl.ctx.lineTo(x + w / 2, y - s / 2 - h);
+    pl.ctx.lineTo(x - w / 2, y - s / 2 - h);
+    pl.ctx.lineTo(x - w / 2, y - s / 2);
+    pl.ctx.stroke()
+
+    pl.ctx.beginPath();
+    pl.ctx.moveTo(x - w / 2, y + s / 2);
+    pl.ctx.lineTo(x + w / 2, y + s / 2);
+    pl.ctx.lineTo(x + w / 2, y + s / 2 + h);
+    pl.ctx.lineTo(x - w / 2, y + s / 2 + h);
+    pl.ctx.lineTo(x - w / 2, y + s / 2);
     pl.ctx.stroke()
   }
 
@@ -605,16 +654,21 @@ class RFReciever extends RFElement {
   }
 
   pdraw(pl, pos, size, col) {
+    this.drawSquircle(pl, pos, size, 2, col)
     pl.ctx.beginPath();
-    pl.ctx.lineWidth = 20;
-    pl.ctx.strokeStyle = "green";
-    const ll = pl.downSz(10, 10);
-    const sl = pl.downSz(5, 10);
-    const cl = pl.downSz(30, 10);
-    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2)
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2)
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2)
-    pl.ctx.stroke()
+    pl.ctx.strokeStyle = col;
+    pl.ctx.lineWidth = 3;
+
+    const [x, y] = pos;
+    const waveCount = 5
+    const waveGap = 9
+    const angle = 0.7
+
+    for (let i = 1; i <= waveCount; i++) {
+       pl.ctx.beginPath();
+       pl.ctx.arc(x - 20, y, waveGap * i, angle, -angle, true);
+       pl.ctx.stroke();
+    }
   }
 
   pdestroy() { this.worker.terminate() }
@@ -669,25 +723,18 @@ class RFTransmitter extends RFElement {
     this.drawSquircle(pl, pos, size, 2, col)
     pl.ctx.beginPath();
     pl.ctx.strokeStyle = col;
-    pl.ctx.lineWidth = 2;
+    pl.ctx.lineWidth = 3;
 
-    const ll = pl.downSz(10, 10);
-    const sl = pl.downSz(5, 10);
-    const cl = pl.downSz(30, 10);
-    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] + sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] + sl[0] / 2 + ll[0])
-    pl.ctx.lineTo(pos[0] - sl[0] / 2 - ll[0], pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] - sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] - sl[0] / 2        , pos[1] - sl[0] / 2 - ll[0])
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2 - ll[0])
-    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.stroke()
-    pl.ctx.beginPath();
-    pl.ctx.arc(pos[0], pos[1], cl[0], 0, 2 * Math.PI)
-    pl.ctx.stroke()
+    const [x, y] = pos;
+    const waveCount = 5
+    const waveGap = 9
+    const angle = 0.7
+
+    for (let i = 1; i <= waveCount; i++) {
+       pl.ctx.beginPath();
+       pl.ctx.arc(x - 20, y, waveGap * i, angle, -angle, true);
+       pl.ctx.stroke();
+    }
   }
 
   destroyContextMenu() { if (this.ppl != undefined) { this.ppl.destroy() } }
@@ -711,16 +758,21 @@ class RFPlayer extends RFElement {
   }
 
   pdraw(pl, pos, size, col) {
+    this.drawSquircle(pl, pos, size, 2, col)
     pl.ctx.beginPath();
-    pl.ctx.lineWidth = 20;
-    pl.ctx.strokeStyle = "blue";
-    const ll = pl.downSz(10, 10);
-    const sl = pl.downSz(5, 10);
-    const cl = pl.downSz(30, 10);
-    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2        )
-    pl.ctx.stroke()
+    pl.ctx.strokeStyle = col;
+    pl.ctx.lineWidth = 3;
+
+    const [x, y] = pos;
+    const waveCount = 5
+    const waveGap = 9
+    const angle = 0.7
+
+    for (let i = 1; i <= waveCount; i++) {
+       pl.ctx.beginPath();
+       pl.ctx.arc(x, y + 15, waveGap * i, 3.14 * 3 / 2 - angle, 3.14 * 3 / 2 + angle);
+       pl.ctx.stroke();
+    }
   }
 
   preset() {
@@ -807,15 +859,20 @@ class RFOscillator extends RFElement {
   }
 
   pdraw(pl, pos, size, col) {
+    this.drawSquircle(pl, pos, size, 2, col)
     pl.ctx.beginPath();
-    pl.ctx.lineWidth = 20;
-    pl.ctx.strokeStyle = "red";
-    const ll = pl.downSz(10, 10);
-    const sl = pl.downSz(5, 10);
-    const cl = pl.downSz(30, 10);
-    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2        )
+    pl.ctx.strokeStyle = col;
+    pl.ctx.lineWidth = 3;
+
+    const [x, y] = pos;
+
+    pl.ctx.beginPath()
+    pl.ctx.arc(x, y, 30, 0, Math.PI * 2);
+    pl.ctx.stroke()
+
+    pl.ctx.beginPath()
+    pl.ctx.moveTo(x - 20, y)
+    pl.ctx.bezierCurveTo(x - 0, y - 30, x + 0, y + 30, x + 20, y)
     pl.ctx.stroke()
   }
 
@@ -1037,12 +1094,6 @@ export class Playground {
         this.ctx.beginPath()
         const cfp = this.downSz(facet.x, facet.y)
         const cfz = this.downSz(facet.w, facet.h)
-        let ccol
-        if (facet.val == undefined) {
-          ccol = "black"
-        } else {
-          ccol = `rgb(${facet.val * 255}, ${facet.val * 255}, ${facet.val * 255})`
-        }
         this.ctx.rect(
           cp[0] + cfp[0] - cfz[0] / 2, 
           cp[1] + cfp[1] - cfz[1] / 2, 
@@ -1059,7 +1110,7 @@ export class Playground {
           }
         }
         this.ctx.fill();
-        this.ctx.strokeStyle = ccol; this.ctx.stroke();
+        this.ctx.strokeStyle = "#FFFFFF"; this.ctx.stroke();
       })
     }})
   }
