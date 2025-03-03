@@ -3,10 +3,10 @@
     <p class="text-3xl"> Capital Galateana C.G. </p>
     
     <div class="flex flex-row items-center justify-center gap-x-10 mt-20">
-        <a href="/playground" class="text-center text-xl w-64 bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-green-900 transition-all ">
+        <a href="/playground" class="text-center text-xl w-64 bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-green-900 transition-all ">
             🛝 Playground 
         </a>
-        <a href="/learn" class="text-center text-xl w-64 bg-ghost border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all ">
+        <a href="/learn" class="text-center text-xl w-64 bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all ">
             📖 Learn
         </a>
     </div>

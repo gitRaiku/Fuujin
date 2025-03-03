@@ -4,7 +4,8 @@
 @theme {
     --color-fg: #FFFFFF; 
     --color-bg: #040404;
-    --color-ghost: #0a0a0a; 
+    --color-ghost: #FFFFFF; 
+    --color-ghostbg: #0a0a0a; 
     --color-primary: #43D051;
     --color-secondary: #27742E; 
 }
