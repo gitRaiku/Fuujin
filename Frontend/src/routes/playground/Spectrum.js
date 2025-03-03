@@ -35,7 +35,6 @@ export class Spectrum {
   createWorker() {
     if (window.Worker) {
       this.worker = new Worker("/src/routes/playground/Worker.js");
-
       this.worker.onmessage = (e) => {this.addFrame(e)}
       this.worker.onerror = (error) => {console.log(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.destroy()}
       this.worker.postMessage({'type': 'startReading'})
@@ -49,7 +48,6 @@ export class Spectrum {
     this.canvasPos = [this.bounding.x, this.bounding.y]
     this.canvas.height = this.bounding.height
     this.canvas.width = this.bounding.width
-    //console.log(`Updb ${this.canvasPos} ${this.canvas.width}  ${this.canvas.height}`)
   }
 
   addFrame(data) {
@@ -102,7 +100,6 @@ export class Spectrum {
 
   destroy() {
     clearInterval(this.redrawer)
-    console.log("ClearInterval")
     if (this.worker != undefined) {
       this.worker.terminate()
     }

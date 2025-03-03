@@ -1,4 +1,4 @@
-import { PCMPlayer } from '/src/routes/playground/pcm-player.js';
+import { PCMPlayer, AudioPlayer } from '/src/routes/playground/pcm-player.js';
 import { KissFFT, KissFFTR, loadKissFFT } from '/src/routes/login/KissFFTLoader.js';
 
 export async function playgroundOnMount() { await loadKissFFT() }
@@ -23,10 +23,19 @@ class AudioPacket {
     }
   }
 
+  mima() {
+    let mi = 0
+    let ma = 0
+    for (let i = 0; i < 512; ++i) {
+      if (this.arr[i] < mi) { mi = this.arr[i] }
+      if (this.arr[i] > ma) { ma = this.arr[i] }
+    }
+    return [mi, ma]
+  }
+
   toString() { return `AudioPacket {${this.type}:${this.arr.length}:${this.arr[2]}}` }
 
-  freqToBin() {
-  }
+  freqToBin() { }
 
   static freqPacket(freq, amplitude = 1.0, offset = 0) {
     var f32 = new Float32Array(512)
@@ -117,13 +126,26 @@ class RFElement {
     this.pl = pl
     this.id = pl.nextid
     pl.nextid++
+    this.cstate = 0
   }
 
-  start() {}
-  stop() {}
-  reset() {}
+  isRunning() { return 0; }
+
   destroy() {
     if (this.contextOpen) { this.destroyContextMenu() }
+    if (this.pdestroy != undefined) { this.pdestroy() }
+  }
+  start() {
+    this.cstate = 1
+    if (this.pstart != undefined) { this.pstart() }
+  }
+  stop() {
+    this.cstate = 0
+    if (this.pstop != undefined) { this.pstop() }
+  }
+  reset() {
+    this.cstate = 2
+    if (this.preset != undefined) { this.preset() }
   }
 
   drawSquircle(pl, pos, size, width, col, fillColor = undefined) {
@@ -329,11 +351,13 @@ class RFAudio extends RFElement {
     document.body.appendChild(this.input)
   }
 
-  reset() { this.lastSample = 0 }
+  preset() { this.lastSample = 0 }
 
   pdraw(pl, pos, size, col) {
     this.drawSquircle(pl, pos, size, 2, col)
   }
+
+  isRunning() { return this.lastSample < this.audioLength }
 
   pupdate() {
     const cp = new AudioPacket(0)
@@ -346,6 +370,42 @@ class RFAudio extends RFElement {
       }
     }
     this.facets[0].val = cp
+  }
+}
+
+class RFCopy extends RFElement {
+  constructor(name, pos, pl) { 
+    super(name, pos, pl); 
+    this.ntype = 8
+    this.x = pos[0]
+    this.y = pos[1]
+    this.h = 100
+    this.w = 150
+    this.facets = [
+      {x:-75, y:   0, h: 30, w: 30, iout: 0},
+      {x: 75, y: -50, h: 30, w: 30, iout: 1},
+      {x: 75, y:  50, h: 30, w: 30, iout: 1},
+    ]
+  }
+
+  pdraw(pl, pos, size, col) {
+    this.drawSquircle(pl, pos, size, 2, col)
+    pl.ctx.beginPath();
+    pl.ctx.strokeStyle = col;
+    pl.ctx.lineWidth = 2;
+
+    const ll = pl.downSz(10, 10);
+    const sl = pl.downSz(5, 10);
+    const cl = pl.downSz(30, 10);
+    pl.ctx.stroke()
+    pl.ctx.beginPath();
+    pl.ctx.arc(pos[0], pos[1], cl[0], 0, 2 * Math.PI)
+    pl.ctx.stroke()
+  }
+
+  pupdate() {
+    this.facets[1].val = this.facets[0].val
+    this.facets[2].val = this.facets[0].val
   }
 }
 
@@ -535,7 +595,9 @@ class RFReciever extends RFElement {
     this.worker = new Worker("/src/routes/playground/Worker.js");
 
     this.worker.onmessage = (e) => {
-      this.packets.push(new AudioPacket(1, e.data))
+      //console.log(e.data)
+      const cp = new AudioPacket(1, e.data)
+      this.packets.push(cp)
     }
     this.worker.onerror = (error) => {console.error(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.worker.terminate()}
     this.worker.postMessage({'type': 'startReading'})
@@ -554,26 +616,27 @@ class RFReciever extends RFElement {
     pl.ctx.stroke()
   }
 
-  destroyContextMenu() {
-    this.worker.terminate()
-  }
+  pdestroy() { this.worker.terminate() }
 
-  start() {
-    this.worker.postMessage({'type': 'startReading'})
-  }
+  pstart() { this.worker.postMessage({'type': 'startReading'}) }
 
-  stop() {
-    this.worker.postMessage({'type': 'stopReading'})
-  }
+  pstop() { this.worker.postMessage({'type': 'stopReading'}) }
+
+  preset() { this.packets = []; this.delay = 0 }
 
   pupdate() {
-    if (this.packets.length == 0) {
-      console.log(`Got packet NOTHING`)
-      this.facets[0].val = new AudioPacket(0)
+    this.delay += 1
+    if (this.delay > 10) {
+      if (this.packets.length == 0) {
+        //console.log(`Got packet NOTHING`)
+        this.facets[0].val = new AudioPacket(0)
+      } else {
+        //console.log(`Got packet ${this.packets[0].toString()}`)
+        this.facets[0].val = this.packets[0]
+        this.packets.shift()
+      }
     } else {
-      console.log(`Got packet ${this.packets[0].toString}`)
-      this.facets[0].val = this.packets[0]
-      this.packets.shift()
+        this.facets[0].val = new AudioPacket(0)
     }
   }
 }
@@ -644,7 +707,6 @@ class RFPlayer extends RFElement {
     this.facets = [
       {x: -50, y: 0, h: 30, w: 30, iout: 0},
     ]
-    this.samples = []
   }
 
   pdraw(pl, pos, size, col) {
@@ -660,32 +722,33 @@ class RFPlayer extends RFElement {
     pl.ctx.stroke()
   }
 
-  finish() {
-    console.log("Start playing")
+  preset() {
+    this.ap = new AudioPlayer()
+    this.ap.init()
+    /*
     if (this.ppl != undefined) { this.ppl.destroy() }
     this.ppl = new PCMPlayer({
       encoding: '32bitFloat',
       channels: 1,
       sampleRate: 44100,
-      flushingTime: 1000
+      flushingTime: 10000
     })
-    const f32 = new Float32Array(this.samples.length * 512)
-    for (let i = 0; i < this.samples.length; ++i) {
-      f32.set(this.samples[i].arr, i * 512)
-    }
-    this.samples = []
-    this.ppl.feed(f32)
-    this.ppl.flush()
+    this.ppl.flush()*/
   }
 
-  destroyContextMenu() {
-    this.ppl.destroy()
+  pstop() { 
+    if (this.ppl != undefined) {
+      this.ppl.destroy() 
+    }
   }
 
   pupdate() {
-    const tval = this.facets[0].val
-    console.log(`Push ${tval.toString()}`)
-    this.samples.push(tval.toTime())
+    if (this.ap != undefined) {
+      const tval = this.facets[0].val.toTime()
+      //console.log(`Rval ${tval.toString()}`)
+      const f32 = new Float32Array(tval.arr)
+      this.ap.addData(f32)
+    }
   }
 }
 
@@ -701,11 +764,13 @@ class RFOscillator extends RFElement {
       {x: 50, y: 0, h: 30, w: 30, iout: 1},
     ]
     this.samples = []
-    this.freq = 440.0
+    // this.freq = 440.0
+    this.freq = 64 * 44100.0 / 512.0
+
     this.amplitude = 0.4
   }
 
-  reset() { this.foffset = 0 }
+  preset() { this.foffset = 0 }
 
   initContextMenu() {
     this.input.style.position = 'fixed'
@@ -755,7 +820,7 @@ class RFOscillator extends RFElement {
 
   pupdate() {
     if (this.foffset == undefined) { this.foffset = 0 }
-    const cp = AudioPacket.freqPacket(this.freq, this.amplitude, this.foffset * 512).toFreq()
+    const cp = AudioPacket.freqPacket(this.freq, this.amplitude, this.foffset * 512)
     this.foffset += 1
     this.facets[0].val = cp.toFreq()
   }
@@ -861,7 +926,6 @@ export class Playground {
     const cfp = this.downSz(this.nodes[id[0]].facets[id[1]].x, this.nodes[id[0]].facets[id[1]].y)
     // const cfz = this.downSz(this.nodes[id[0]].facets[id[1]].w, this.nodes[id[0]].facets[id[1]].h)
 
-
     return [cp[0] + cfp[0], cp[1] + cfp[1]]
   }
 
@@ -950,15 +1014,47 @@ export class Playground {
     }})
   }
 
-  startSimulation() {
-    for (let node of this.nodes) {node.start()}
-    for (let node of this.nodes) {node.reset()}
+  shouldRunSimulation() {
+    return this.nodes.some((node) => {
+      return node.isRunning()
+    })
+  }
 
-    for (let i = 0; i < 1000; ++i) {
-      this.updateNodes()
-    }
-
+  stopSimulation() {
+    this.simulationStatus = 0
+    console.log("StopSim")
+    if (this.simulationLoop != undefined) { clearInterval(this.simulationLoop)  }
     for (let node of this.nodes) {node.stop()}
+  }
+
+  startSimulation() {
+    if (this.simulationStatus === 1) {
+      this.simulationStatus = 2
+      clearInterval(this.simulationLoop) 
+      console.log("PauseSim")
+      return
+    } else if (this.simulationStatus != 2) {
+      for (let node of this.nodes) {
+        node.start()
+        node.reset()
+      }
+    } else {
+      for (let node of this.nodes) {
+        if (node.cstate == 0) {
+          node.start()
+          node.reset()
+        }
+      }
+    }
+    this.simulationStatus = 1;
+    console.log("StartSim")
+
+    this.simulationLoop = setInterval(() => {
+      this.updateNodes()
+      if (!this.shouldRunSimulation()) {
+        this.stopSimulation()
+      }
+    }, (512000 / 44100))
   }
 
   addNode(f, nodeType) {
@@ -989,6 +1085,9 @@ export class Playground {
         break
       case 7:
         this.nodes.push(new RFPlayer("Player", f, this))
+        break
+      case 8:
+        this.nodes.push(new RFCopy("Copy", f, this))
         break
       default:
         this.startSimulation()

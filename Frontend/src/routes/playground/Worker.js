@@ -18,13 +18,13 @@ let sloop;
 let toReset = false
 async function startWebsocketLoop() {
   await waiter(() => { return socket.readyState == WebSocket.OPEN } )
+  console.log("Start sending")
   sloop = setInterval(() => {
+    //console.log(`Sender`)
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING) { console.error("Worker: Socket closed!"); stopWebsocketLoop() }
     if (socket.readyState == WebSocket.OPEN) {
       if (buffer.length > 0) {
-        toReset = true
         let larr = new Uint8Array(5 + buffer[0].arr.length * 4)
-        //console.log("Sending backedn res")
         larr[0] = '0'
         larr[1] = 0
         larr[2] = 10
@@ -40,7 +40,7 @@ async function startWebsocketLoop() {
         console.log("Reset")
       }
     }
-  }, 1)
+  }, (512000 / 44100) * 0.97)
 }
 
 function stopWebsocketLoop() { clearInterval(sloop) }
@@ -80,11 +80,12 @@ async function startReadingLoop() {
 function stopReadingLoop() { clearInterval(rloop) }
 
 onmessage = (e) => {
-  //console.log(`Worker log: ${e.data}`)
+  //console.log(`Worker log: ${e.data['type']}`)
   if (e.data['type'] == 'data') {
     buffer.push(e.data['data'])
     //socket = e.data['socket']
   } else if (e.data['type'] == 'startStream') {
+    console.log("AAAAAAAAAAAAAAAAA")
     startWebsocketLoop()
   } else if (e.data['type'] == 'stopStream') {
     stopWebsocketLoop()

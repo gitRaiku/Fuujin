@@ -13,6 +13,11 @@
 
 <div class="flex flex-col justify-start items-center w-full h-full">
   <div class="flex flex-col items-center justify-center h-[80%] w-full mt-20">
+    <div id="controls" class="w-[80%] h-auto p-3  gap-x-5 flex flex-row items-center justify-center">
+      <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_start" >Start sim</button>
+      <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_stop" >Stop sim</button>
+    </div>
+
     <div class="border border-ghost w-[80%] h-[20%]" id='canvasDiv'><canvas id="spectrumCanvas" class="w-[100%] object-fill"></canvas></div>
     <div class="w-[80%] h-[80%] border border-t-0 border-ghost"><canvas id="canvas"></canvas></div>
 
@@ -27,6 +32,7 @@
       <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_step">Step Node</button>
       <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_recv">Reciever Node</button>
       <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_plyr">Player Node</button>
+      <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_copy">Copy Node</button>
     </div>
   </div>
 </div>
@@ -72,6 +78,7 @@
         document.getElementById("node_osci"),
         document.getElementById("node_recv"),
         document.getElementById("node_plyr"),
+        document.getElementById("node_copy"),
         document.getElementById("node_run")
       ]
 
@@ -80,6 +87,10 @@
       pl = new Playground(canvas, nodeButtons)
       pl.updateBounds(window.innerWidth, window.innerHeight);
       window.pl = pl
+
+
+      document.getElementById("node_start").addEventListener("click", (e) => {pl.startSimulation()})
+      document.getElementById("node_stop").addEventListener("click", (e) => {pl.stopSimulation()})
 
       /*
       pl.addNode([0.1, 0.5], 3)
