@@ -16,7 +16,6 @@
   <nav class="flex flex-row items-center justify-center gap-x-5 text-xl p-2  pr-4 pl-4 bg-ghostbg rounded-md">
     <a class="hover:font-bold hover:text-secondary transition-all" href="/playground">Playground</a>
     <a class="hover:font-bold hover:text-secondary transition-all" href="/learn">Learn</a>
-    <a class="hover:font-bold hover:text-secondary transition-all" href="/login">Login</a>
   </nav>
 </header>
 

@@ -1,5 +1,5 @@
 import { PCMPlayer, AudioPlayer } from '/src/routes/playground/pcm-player.js';
-import { KissFFT, KissFFTR, loadKissFFT } from '/src/routes/login/KissFFTLoader.js';
+import { KissFFT, KissFFTR, loadKissFFT } from '/src/routes/playground/KissFFTLoader.js';
 
 export async function playgroundOnMount() { await loadKissFFT() }
 class AudioPacket {
@@ -150,8 +150,9 @@ class RFElement {
 
   drawSquircle(pl, pos, size, width, col, fillColor = undefined) {
     pl.ctx.beginPath()
-    pl.ctx.lineWidth = width;
-    pl.ctx.strokeStyle = col;
+    pl.ctx.lineWidth = width
+    pl.ctx.strokeStyle = col
+    pl.ctx.fillStyle = "none"
     
     const arcLen = 20;
     pl.ctx.arc(
@@ -846,7 +847,14 @@ export class Playground {
     this.nodeUpdateOrder = [] 
     let cupdate = []
     let mlen = []
+    let olen = []
     for (let i = 0; i < nlen; i++) {
+      if (this.nodes[i].ntype == 999999) { 
+        mlen.push(999999)
+        olen.push(999999)
+        nodeLinks.push([])
+        continue; 
+      }
       let clinks = []
       let inc = 0
       for (let f of this.nodes[i].facets) {
@@ -861,8 +869,10 @@ export class Playground {
       if (inc == 0) { 
         cupdate.push([i, 0])
         mlen.push(0)
+        olen.push(0)
       } else {
         mlen.push(inc)
+        olen.push(inc)
       }
       nodeLinks.push(clinks)
       //console.log(`curi ${i + 1} / ${nlen}`)
@@ -887,8 +897,19 @@ export class Playground {
         }
       }
     }
+    /*
+    for (let i = 0; i < nlen; i++) {
+      if (this.nodes[i].ntype == 999999) { continue; }
+      if (0 < mlen[i] && mlen[i] < olen[i]) {
+        cupdate = []
+        this.nodeUpdateOrder = []
+        this.circularNodes = true
+        break
+      }
+    }
+    */
 
-    //console.log(`Update order ${this.nodeUpdateOrder}`)
+    console.log(`Update order ${this.nodeUpdateOrder}`)
   }
 
   updateNodes() {
@@ -921,6 +942,10 @@ export class Playground {
     return [ fixX, fixY ]
   }
 
+  nodeCenter(id) {
+    return this.upPose(this.nodes[id[0]].x, this.nodes[id[0]].y)
+  }
+
   facetCenter(id) {
     const cp = this.upPose(this.nodes[id[0]].x, this.nodes[id[0]].y)
     const cfp = this.downSz(this.nodes[id[0]].facets[id[1]].x, this.nodes[id[0]].facets[id[1]].y)
@@ -939,26 +964,51 @@ export class Playground {
     this.ctx.stroke()
   }
 
+  drawBezier(c1, c2, p1, p2, width, style) {
+    this.ctx.beginPath()
+    this.ctx.moveTo(c1[0], c1[1])
+    this.ctx.bezierCurveTo(c1[0] + p1[0], c1[1] + p1[1], c2[0] + p2[0], c2[1] + p2[1], c2[0], c2[1])
+    this.ctx.lineWidth = width
+    this.ctx.strokeStyle = style
+    this.ctx.fillStyle = style
+    this.ctx.stroke()
+  }
+
+  dif2(o1, o2) { return [o1[0] - o2[0], o1[1] - o2[1]] }
   drawConnection(start, end) {
     const c1 = this.facetCenter(start)
     const c2 = this.facetCenter(end)
-    this.drawLine(c1, c2, 3, "green")
+    const dist2 = this.dif2(c1, c2)
+    //const dist = Math.sqrt(dist2[0] * dist2[0] + dist2[1] * dist2[1])
+    const off1 = this.dif2(c1, this.nodeCenter(start))
+    off1[0] *= dist2[0] / 100
+    off1[1] *= dist2[1] / 100
+    const off2 = this.dif2(c2, this.nodeCenter(end))
+    off2[0] *= dist2[0] / 100
+    off1[1] *= dist2[1] / 100
+    this.drawBezier(c1, c2, off1, off2, 3, "white")
   }
 
   drawGraph() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    /*
     if (this.circularNodes == true) {
       this.ctx.rect(0, 0, this.canvas.width, this.canvas.height)
-      this.ctx.fillStyle = "red"
+      this.ctx.fillStyle = "#b04040"
       this.ctx.fill() /// TODO: Make clearer
+      this.ctx.font = "50px JetbrainsMono"
+      this.ctx.fillText("Unconnected nodes or circular connection!", 30, 30)
     }
+    */
 
     let kms = this.canvas.getBoundingClientRect()
     this.nodes.forEach((node, ni) => {
       if (node != undefined) {
         node.facets.forEach((facet, fi) => {
           if (facet.link != null) {
-            this.drawConnection([ni, fi], facet.link)
+            if (facet.iout == 0) {
+              this.drawConnection([ni, fi], facet.link)
+            }
           }
         })
       }
@@ -1268,7 +1318,7 @@ export class Playground {
     if (this.curaction == 1) {
       const c1 = this.facetCenter([onode[0], onode[1] - 1])
 
-      this.drawLine(c1, [x, y])
+      this.drawLine(c1, [x, y], 2, "white")
     }
   }
 
