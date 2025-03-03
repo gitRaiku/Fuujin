@@ -1,18 +1,7 @@
 import { PCMPlayer } from '/src/routes/playground/pcm-player.js';
 import { KissFFT, KissFFTR, loadKissFFT } from '/src/routes/login/KissFFTLoader.js';
 
-var socket;
-export async function playgroundOnMount() { 
-  await loadKissFFT() 
-  /*
-  socket = new WebSocket('ws://localhost:8080')
-  socket.onmessage = (event) => {}
-  socket.onopen = () => {console.log('Playground websocket opened')}
-  socket.onclose = () => {console.log('Playground websocket closed')}
-  socket.onerror = (error) => {console.log(`Playground websocket error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`)}
-  */
-}
-
+export async function playgroundOnMount() { await loadKissFFT() }
 class AudioPacket {
   constructor(type, data) {
     if (type == undefined) {
@@ -130,6 +119,13 @@ class RFElement {
     pl.nextid++
   }
 
+  start() {}
+  stop() {}
+  reset() {}
+  destroy() {
+    if (this.contextOpen) { this.destroyContextMenu() }
+  }
+
   drawSquircle(pl, pos, size, width, col, fillColor = undefined) {
     pl.ctx.beginPath()
     pl.ctx.lineWidth = width;
@@ -162,10 +158,10 @@ class RFElement {
   }
 
   destroyContextMenu() {
+   console.log(`This ${this.input} ${this.button}`)
    if (this.input != undefined) {this.input.remove()}
    if (this.button != undefined) {this.button.remove()}
   }
-
 
   drawText(pl, pos, string) {
     pl.ctx.beginPath()
@@ -178,7 +174,6 @@ class RFElement {
   }
 
   initContextMenu() { }
-  destroyContextMenu() { }
 
   drawContextMenu(pl, pos) {
     const cpos = [pos[0], pos[1] - 50 - 140]
@@ -250,6 +245,22 @@ class RFElement {
   }
 }
 
+class RFEmpty extends RFElement {
+  constructor(pl) { 
+    super('', [99999999, 99999999], pl); 
+    this.ntype = 999999
+    this.x = 999999
+    this.y = 999999
+    this.h = 0
+    this.w = 0
+    this.facets = []
+  }
+
+  initContextMenu() {}
+  pdraw(pl, pos, size, col) {}
+  pupdate() {}
+}
+
 class RFAudio extends RFElement {
   constructor(name, pos, pl) { 
     super(name, pos, pl); 
@@ -262,10 +273,6 @@ class RFAudio extends RFElement {
       {x: 50, y: 0, h: 30, w: 30, iout: 1},
     ]
   }
-
-  /* AM Encoding
-   *
-   */
 
   async processAudioData(file) {
     const audioData = await file.arrayBuffer()
@@ -321,6 +328,8 @@ class RFAudio extends RFElement {
     document.body.appendChild(this.button)
     document.body.appendChild(this.input)
   }
+
+  reset() { this.lastSample = 0 }
 
   pdraw(pl, pos, size, col) {
     this.drawSquircle(pl, pos, size, 2, col)
@@ -539,9 +548,9 @@ class RFReciever extends RFElement {
     const ll = pl.downSz(10, 10);
     const sl = pl.downSz(5, 10);
     const cl = pl.downSz(30, 10);
-    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2        )
-    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2        )
+    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2)
+    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2)
+    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2)
     pl.ctx.stroke()
   }
 
@@ -569,10 +578,65 @@ class RFReciever extends RFElement {
   }
 }
 
-class RFAntenna extends RFElement {
+class RFTransmitter extends RFElement {
   constructor(name, pos, pl) { 
     super(name, pos, pl); 
     this.ntype = 4
+    this.x = pos[0]
+    this.y = pos[1]
+    this.h = 100
+    this.w = 100
+    this.facets = [
+      {x: -50, y: 0, h: 30, w: 30, iout: 0},
+    ]
+    this.worker = new Worker("/src/routes/playground/Worker.js");
+
+    this.worker.onmessage = (e) => {}
+    this.worker.onerror = (error) => {console.error(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.worker.terminate()}
+    this.worker.postMessage({'type': 'startStream'})
+  }
+
+  destroy() {
+    if (this.worker != undefined) {this.worker.terminate()}
+    if (this.contextOpen) { this.destroyContextMenu() }
+  }
+
+  pdraw(pl, pos, size, col) {
+    this.drawSquircle(pl, pos, size, 2, col)
+    pl.ctx.beginPath();
+    pl.ctx.strokeStyle = col;
+    pl.ctx.lineWidth = 2;
+
+    const ll = pl.downSz(10, 10);
+    const sl = pl.downSz(5, 10);
+    const cl = pl.downSz(30, 10);
+    pl.ctx.moveTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] - sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] + sl[0] / 2 + ll[0], pos[1] + sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] + sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] + sl[0] / 2 + ll[0])
+    pl.ctx.lineTo(pos[0] - sl[0] / 2 - ll[0], pos[1] - sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] - sl[0] / 2        , pos[1] - sl[0] / 2        )
+    pl.ctx.lineTo(pos[0] - sl[0] / 2        , pos[1] - sl[0] / 2 - ll[0])
+    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2 - ll[0])
+    pl.ctx.lineTo(pos[0] + sl[0] / 2        , pos[1] - sl[0] / 2        )
+    pl.ctx.stroke()
+    pl.ctx.beginPath();
+    pl.ctx.arc(pos[0], pos[1], cl[0], 0, 2 * Math.PI)
+    pl.ctx.stroke()
+  }
+
+  destroyContextMenu() { if (this.ppl != undefined) { this.ppl.destroy() } }
+  pupdate() { 
+    const tval = this.facets[0].val.toFreq()
+    this.worker.postMessage({'type': 'data', 'data': tval})
+  }
+}
+
+class RFPlayer extends RFElement {
+  constructor(name, pos, pl) { 
+    super(name, pos, pl); 
+    this.ntype = 7
     this.x = pos[0]
     this.y = pos[1]
     this.h = 100
@@ -596,11 +660,8 @@ class RFAntenna extends RFElement {
     pl.ctx.stroke()
   }
 
-  reset() {
-    this.pl.worker.postMessage({'type': 'reset'})
-  }
-
   finish() {
+    console.log("Start playing")
     if (this.ppl != undefined) { this.ppl.destroy() }
     this.ppl = new PCMPlayer({
       encoding: '32bitFloat',
@@ -623,11 +684,8 @@ class RFAntenna extends RFElement {
 
   pupdate() {
     const tval = this.facets[0].val
-    //socket.send(tval.arr)
+    console.log(`Push ${tval.toString()}`)
     this.samples.push(tval.toTime())
-    const tf = tval.toFreq()
-    //console.log("GotMessage", tf.toString())
-    this.pl.worker.postMessage({'type': 'data', 'data': tf})
   }
 }
 
@@ -643,9 +701,11 @@ class RFOscillator extends RFElement {
       {x: 50, y: 0, h: 30, w: 30, iout: 1},
     ]
     this.samples = []
-    this.freq = 0.0
+    this.freq = 440.0
     this.amplitude = 0.4
   }
+
+  reset() { this.foffset = 0 }
 
   initContextMenu() {
     this.input.style.position = 'fixed'
@@ -712,19 +772,6 @@ export class Playground {
     this.nodeButtons = nodeButtons
     this.nodeUpdateOrder = [] 
     this.nextid = 0
-    this.createWorker()
-  }
-
-  createWorker() {
-    if (window.Worker) {
-      this.worker = new Worker("/src/routes/playground/Worker.js");
-
-      this.worker.onmessage = (e) => {console.log(`Message received from worker ${e.data}`)}
-      this.worker.onerror = (error) => {console.error(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.worker.terminate()}
-      this.worker.postMessage({'type': 'startStream'})
-    } else {
-      console.error("Your browser doesn't support web workers.");
-    }
   }
 
   updateNodeUpdateOrder() {
@@ -787,7 +834,7 @@ export class Playground {
   }
 
   updateBounds(w, h) {
-    this.bounding = canvas.getBoundingClientRect()
+    this.bounding = this.canvas.getBoundingClientRect()
     this.canvasPos = [this.bounding.x, this.bounding.y]
     this.canvas.width = this.bounding.width
     this.canvas.height = this.bounding.height
@@ -801,9 +848,6 @@ export class Playground {
 
   downSz(x, y) {
     return [ x, y ]
-    let fixX = x / this.bounding.width * 300
-    let fixY = y / this.bounding.height * 300
-    return [ fixX, fixY ]
   }
 
   upPose(x, y) {
@@ -838,23 +882,25 @@ export class Playground {
   }
 
   drawGraph() {
-    this.ctx.clearRect(0, 0, canvas.width, canvas.height)
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
     if (this.circularNodes == true) {
-      this.ctx.rect(0, 0, canvas.width, canvas.height)
-      this.ctx.fillStyle = "black"
-      this.ctx.fill()
+      this.ctx.rect(0, 0, this.canvas.width, this.canvas.height)
+      this.ctx.fillStyle = "red"
+      this.ctx.fill() /// TODO: Make clearer
     }
 
-    let kms = canvas.getBoundingClientRect()
+    let kms = this.canvas.getBoundingClientRect()
     this.nodes.forEach((node, ni) => {
-      node.facets.forEach((facet, fi) => {
-        if (facet.link != null) {
-          this.drawConnection([ni, fi], facet.link)
-        }
-      })
+      if (node != undefined) {
+        node.facets.forEach((facet, fi) => {
+          if (facet.link != null) {
+            this.drawConnection([ni, fi], facet.link)
+          }
+        })
+      }
     })
     
-    this.nodes.forEach((node, ni) => {
+    this.nodes.forEach((node, ni) => { if (node != undefined) {
       this.ctx.beginPath();
       this.ctx.lineWidth = 1;
       const cp = this.upPose(node.x, node.y)
@@ -901,7 +947,18 @@ export class Playground {
         this.ctx.fill();
         this.ctx.strokeStyle = ccol; this.ctx.stroke();
       })
-    })
+    }})
+  }
+
+  startSimulation() {
+    for (let node of this.nodes) {node.start()}
+    for (let node of this.nodes) {node.reset()}
+
+    for (let i = 0; i < 1000; ++i) {
+      this.updateNodes()
+    }
+
+    for (let node of this.nodes) {node.stop()}
   }
 
   addNode(f, nodeType) {
@@ -922,7 +979,7 @@ export class Playground {
         this.nodes.push(new RFAudio("Audio", f, this))
         break
       case 4:
-        this.nodes.push(new RFAntenna("Antenna", f, this))
+        this.nodes.push(new RFTransmitter("Antenna", f, this))
         break
       case 5:
         this.nodes.push(new RFOscillator("Oscillator", f, this))
@@ -931,30 +988,10 @@ export class Playground {
         this.nodes.push(new RFReciever("Reciever", f, this))
         break
       case 7:
-        for (let node of this.nodes) {
-          if (node.ntype == 6) {
-            node.start()
-          }
-          if (node.ntype == 3) {
-            node.lastSample = 0
-          }
-          if (node.ntype == 4) {
-            node.reset()
-          }
-        }
-
-        for (let i = 0; i < 1000; ++i) {
-          this.updateNodes()
-        }
-
-        for (let node of this.nodes) {
-          if (node.ntype == 6) {
-            node.stop()
-          }
-          if (node.ntype == 4) {
-            node.finish()
-          }
-        }
+        this.nodes.push(new RFPlayer("Player", f, this))
+        break
+      default:
+        this.startSimulation()
         break
     }
 
@@ -1004,7 +1041,10 @@ export class Playground {
     this.clearFocus()
     const f = this.downPose(x, y)
     const cnode = this.getNodeAtPosition(f)
-    if (cnode != null && cnode[1] == 0) { this.nodes[cnode[0]].focused = true }
+    if (cnode != null && cnode[1] == 0) { 
+      this.nodes[cnode[0]].focused = true 
+      this.selnode = cnode
+    }
     this.drawGraph()
     if (cnode != null && cnode[1] != 0) {
       this.curaction = 1
@@ -1133,14 +1173,36 @@ export class Playground {
     }
   }
 
-  destroy() {
-    if (this.worker != undefined) {
-      this.worker.terminate()
+  static getMods(e) {
+    return e.altKey << 3 | e.ctrlKey << 2 || e.shiftKey << 1 | e.metaKey
+  }
+
+  destroyNode(node) {
+    console.log(`Destroying node ${node[0]}`)
+    this.nodes[node[0]].facets.forEach((facet, fi) => {
+      if (facet.link != undefined && facet.link != null) {
+        this.linkFacets([node[0], fi], facet.link)
+      }
+    })
+    this.nodes[node[0]].destroyContextMenu()
+    this.nodes[node[0]] = new RFEmpty(this)
+    this.drawGraph()
+  }
+
+  keydown(e) {
+    if (e.key == 'Delete' && Playground.getMods(e) == 0) {
+      if (this.selnode != undefined) {
+        this.destroyNode(this.selnode)
+        this.selnode = undefined
+      }
+      console.log(e)
     }
-    pl.nodes[5].ppl.destroy()
-    if (pl.nodes != null && pl.nodes != undefined) {
-      pl.nodes.forEach(node => {
-        if (node.contextOpen) { node.destroyContextMenu() }
+  }
+
+  destroy() {
+    if (this.nodes != null && this.nodes != undefined) {
+      this.nodes.forEach(node => {
+        node.destroy()
       })
     }
   }

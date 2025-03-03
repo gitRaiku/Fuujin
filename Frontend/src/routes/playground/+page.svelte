@@ -13,7 +13,7 @@
 
 <div class="flex flex-col justify-start items-center w-full h-full">
   <div class="flex flex-col items-center justify-center h-[80%] w-full mt-20">
-    <div class="border border-ghost w-[80%] h-[20%]"><canvas id="spectrumCanvas" class="w-[100%] object-fill"></canvas></div>
+    <div class="border border-ghost w-[80%] h-[20%]" id='canvasDiv'><canvas id="spectrumCanvas" class="w-[100%] object-fill"></canvas></div>
     <div class="w-[80%] h-[80%] border border-t-0 border-ghost"><canvas id="canvas"></canvas></div>
 
     <div id="controls" class="w-[80%] h-auto p-3  gap-x-5 flex flex-row items-center justify-center">
@@ -21,11 +21,12 @@
       <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_mult">Multiplier Node</button>
       <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_cnst">Constant Node</button>
       <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_audi">Audio Node</button>
-      <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_ante">Antenna Node</button>
+      <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_ante">Transmitter Node</button>
       <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_osci">Oscillator Node</button>
-      <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all"id="node_run">Run Node</button>
+      <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_run">Run Node</button>
       <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_step">Step Node</button>
       <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_recv">Reciever Node</button>
+      <button class="text-center text-xl w-auto bg-ghostbg border border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_plyr">Player Node</button>
     </div>
   </div>
 </div>
@@ -35,12 +36,29 @@
   import { onMount, onDestroy } from 'svelte';
   import { Spectrum, spectrumOnMount } from './Spectrum.js';
   import { Playground, playgroundOnMount } from './Playground.js';
-  
+
   let pl;
   let spec;
+  function windowKeyDown(e) {
+    if (pl != undefined) { pl.keydown(e) }
+  }
+
+  function windowOnchange(e) {
+    if (pl != undefined) {
+      pl.updateBounds(window.innerWidth, window.innerHeight); 
+      pl.drawGraph()
+    }
+    if (spec != undefined) {
+      spec.updateBounds(window.innerWidth, window.innerHeight);
+      spec.update()
+    }
+  }
+
   onDestroy(() => {
     if (pl != null && pl != undefined) { pl.destroy() }
     if (spec != null && spec != undefined) { spec.destroy() }
+    pl = undefined
+    spec = undefined
   })
 
   onMount(() => {
@@ -53,13 +71,15 @@
         document.getElementById("node_ante"),
         document.getElementById("node_osci"),
         document.getElementById("node_recv"),
+        document.getElementById("node_plyr"),
         document.getElementById("node_run")
       ]
 
-      const canvas = document.getElementById("canvas"), 
+      const canvas = document.getElementById("canvas")
 
       pl = new Playground(canvas, nodeButtons)
       pl.updateBounds(window.innerWidth, window.innerHeight);
+      window.pl = pl
 
       /*
       pl.addNode([0.1, 0.5], 3)
@@ -103,8 +123,6 @@
       canvas.addEventListener("mousedown", (event) => {pl.mouseDown(event.offsetX, event.offsetY)})
       canvas.addEventListener("mousemove", (event) => {pl.mouseMove(event.offsetX, event.offsetY)})
       canvas.addEventListener("mouseup", (event) => {pl.mouseUp(event.offsetX, event.offsetY)})
-      window.addEventListener("scroll", (event) => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
-      window.addEventListener("resize", () => {pl.updateBounds(window.innerWidth, window.innerHeight); pl.drawGraph()})
 
       for (const [i, node] of nodeButtons.entries()) {
         node.addEventListener("click", () => {
@@ -122,10 +140,8 @@
       spec = new Spectrum(canvas)
       spec.updateBounds(window.innerWidth, window.innerHeight);
       spec.update()
-
-      window.addEventListener("scroll", (event) => {spec.updateBounds(window.innerWidth, window.innerHeight); spec.update()})
-      window.addEventListener("resize", () => {spec.updateBounds(window.innerWidth, window.innerHeight); spec.update()})
     })
   });
 </script>
 
+<svelte:window on:keydown={windowKeyDown} on:resize={windowOnchange} on:scroll={windowOnchange}/>

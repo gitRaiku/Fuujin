@@ -16,7 +16,8 @@ let buffer = []
 
 let sloop;
 let toReset = false
-function startWebsocketLoop() {
+async function startWebsocketLoop() {
+  await waiter(() => { return socket.readyState == WebSocket.OPEN } )
   sloop = setInterval(() => {
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING) { console.error("Worker: Socket closed!"); stopWebsocketLoop() }
     if (socket.readyState == WebSocket.OPEN) {

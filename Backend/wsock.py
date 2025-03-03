@@ -35,9 +35,9 @@ class Message:
 nextSockId = 0
 messages = {}
 async def sendMessage(websocket, centerFreq):
-    '''res = np.array(np.random.rand(514) * 10, dtype='float32')
+    res = np.array(np.random.rand(514) * 10, dtype='float32')
     await websocket.send(res.tobytes())
-    return'''
+    return
     res = np.zeros(514, dtype='float32')
     ct = time()
     for (id, e) in messages.items():
