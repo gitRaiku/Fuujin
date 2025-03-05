@@ -42,7 +42,7 @@ async function startWebsocketLoop() {
         console.log("Reset")
       }
     }
-  }, (512000 / 44100) * 0.97)
+  }, (512000 / 44100) * 0.95)
 }
 
 function stopWebsocketLoop() { clearInterval(sloop) }

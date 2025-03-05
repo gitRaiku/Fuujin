@@ -1391,7 +1391,7 @@ export class Playground {
       if (!this.shouldRunSimulation()) {
         this.stopSimulation()
       }
-    }, (512000 / 44100))
+    }, (512000 / 44100) * 0.97)
   }
 
   addNode(f, nodeType) {
