@@ -2,7 +2,7 @@
 
 A diy software defined radio written in clear JavaScript.
 
-![r2k](https://github.com/gitRaiku/r2k/blob/master/Fuujin.png?raw=true)
+![Fuujin](https://github.com/gitRaiku/Fuujin/blob/master/Fuujin.png)
 
 ## Build and installation
 
