@@ -8,7 +8,3 @@
     <a class="hover:font-bold hover:text-secondary transition-all" href="/learn">Learn</a>
   </nav>
 </header>
-
-<style>
-</style>
-

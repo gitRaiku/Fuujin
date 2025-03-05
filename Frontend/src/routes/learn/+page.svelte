@@ -3,15 +3,11 @@
 	const trees = [
     {label: "Fuujin", children: [
       {label: "Intro", page: "intro"},
-      {label: "What is radio", page: "radio"},
+      {label: "Nodurile Fuujin", page: "nodes"},
+      {label: "Audio player simplu", page: "aplayer"},
 		]},
-    {label: "Nodes", children: [
-      {label: "Audio Node", page: "audionode"},
-      {label: "Adder Node", page: "addernode"},
-      {label: "Multiplier Node"},
-      {label: "Oscillator Node"},
-      {label: "Upconverter Node"},
-      {label: "Transciever Nodes"},
+    {label: "Radio", children: [
+      {label: "Cum merge radioul", page: "radio"},
     ]}
 	]
 
@@ -35,11 +31,11 @@
 </script>
 
 <div class="flex flex-row justify-start w-full h-full">
-  <div class="p-3 min-w-60 max-w-60 border border-2 border-ghost overflow-hidden">
+  <div class="p-3 min-w-60 max-w-60 h-[100%] border-r-2 border-ghost overflow-hidden">
   <TreeView trees={trees} {clicker}/>
   </div>
 
-  <div class="p-3 w-full border border-2 border-ghost">
+  <div class="p-3 w-full border-r-2 overflow-scroll border-ghost">
     {#if $currentComponent}
       <svelte:component this={$currentComponent} />
     {/if}

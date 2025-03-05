@@ -756,7 +756,6 @@ class RFReciever extends RFElement {
       this.packets.push(cp)
     }
     this.worker.onerror = (error) => {console.error(`Worker Error ${error.message} ${error.filename}:${error.lineno}:${error.colno}`); this.worker.terminate()}
-    this.worker.postMessage({'type': 'startReading'})
   }
 
   pdraw(pl, pos, size, col) {
