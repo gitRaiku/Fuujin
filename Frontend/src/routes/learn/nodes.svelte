@@ -1,4 +1,7 @@
 <script>
+  export let clicker
+  function clickBack() {clicker('intro')}
+  function clickFw() {clicker('aplayer')}
   import { onMount, onDestroy } from 'svelte';
   import { Playground, playgroundOnMount } from '/src/routes/playground/Playground.js';
 
@@ -90,6 +93,21 @@
       </div>
     </div>
 
+    <div class="flex flex-column items-center justify-center min-h-20 mt-8">
+      <div class="w-[30%] border text-center min-h-20 hover:border-primary hover:cursor-pointer rounded-md transition-all duration-200 mr-[40%]" on:click={clickBack}>
+        <div class="flex flex-col items-left justify-left p-3">
+          <div class="text-left item-center text-secondary">Pagina Trecuta</div>
+          <div class="text-left item-center">Descriere</div>
+        </div>
+      </div>
+
+      <div class="w-[30%] border text-center min-h-20 hover:border-primary hover:cursor-pointer rounded-md transition-all duration-200" on:click={clickFw}>
+        <div class="flex flex-col items-right justify-right p-3">
+          <div class="text-right item-center text-secondary">Pagina Urmatoare</div>
+          <div class="text-right item-center">Audio player simplu</div>
+        </div>
+      </div>
+    </div>
 
   </div>
 </div>

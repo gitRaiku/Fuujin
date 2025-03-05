@@ -26,10 +26,28 @@
         <div class="w-[100%] h-120 border-2 border-ghost"><canvas id="canvas2" class="w-[100%] h-[100%]"></canvas></div>
       </div>
     </div>
+    <div class="flex flex-column items-center justify-center min-h-20 mt-8">
+      <div class="w-[30%] border text-center min-h-20 hover:border-primary hover:cursor-pointer rounded-md transition-all duration-200 mr-[40%]" on:click={clickBack}>
+        <div class="flex flex-col items-left justify-left p-3">
+          <div class="text-left item-center text-secondary">Pagina Trecuta</div>
+          <div class="text-left item-center">Controlul volumului</div>
+        </div>
+      </div>
+
+      <div class="w-[30%] border text-center min-h-20 hover:border-primary hover:cursor-pointer rounded-md transition-all duration-200" on:click={clickFw}>
+        <div class="flex flex-col items-right justify-right p-3">
+          <div class="text-right item-center text-secondary">Pagina Urmatoare</div>
+          <div class="text-right item-center">Ce este un Semnal</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
+  export let clicker
+  function clickBack() {clicker('avolplayer')}
+  function clickFw() {clicker('semnal')}
   import { onMount, onDestroy } from 'svelte';
   import { Playground, playgroundOnMount } from '/src/routes/playground/Playground.js';
   import { Spectrum, spectrumOnMount } from '/src/routes/playground/Spectrum.js';

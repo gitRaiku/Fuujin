@@ -7,7 +7,7 @@
       {label: "Audio player simplu", page: "aplayer"},
       {label: "Controlul volumului", page: "avolplayer"},
       {label: "Eterul", page: "trans"},
-      {label: "Playground", page: "plg"},
+      // {label: "Playground", page: "plg"},
 		]},
     {label: "Radio", children: [
       {label: "Ce este un semnal", page: "semnal"},
@@ -41,7 +41,7 @@
 
   <div class="p-8 w-full border-r-2 overflow-scroll border-ghost">
     {#if $currentComponent}
-      <svelte:component this={$currentComponent} />
+    <svelte:component this={$currentComponent} {clicker}/>
     {/if}
   </div>
 </div>

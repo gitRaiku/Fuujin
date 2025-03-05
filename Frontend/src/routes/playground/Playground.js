@@ -792,7 +792,7 @@ class RFReciever extends RFElement {
 
   pupdate() {
     this.delay += 1
-    if (this.delay > 10) {
+    if (this.delay > 20) {
       if (this.packets.length == 0) {
         //console.log(`Got packet NOTHING`)
         this.facets[0].val = new AudioPacket(0)
@@ -1391,7 +1391,7 @@ export class Playground {
       if (!this.shouldRunSimulation()) {
         this.stopSimulation()
       }
-    }, (512000 / 44100) * 0.97)
+    }, (512000 / 44100) * 0.99)
   }
 
   addNode(f, nodeType) {

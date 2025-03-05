@@ -59,8 +59,12 @@ async def sendMessage(websocket, centerFreq, tslot):
 
     res = np.zeros(514, dtype='float32')
     for (id, e) in messages.items():
+        kms = 0
         while len(e) > 0 and e[0].tstamp < tslot:
+            kms += 1
             e.popleft()
+        if kms > 1:
+            print("OVEROVER")
 
         if len(e) > 0:
             cf = e[0].getFreq()
