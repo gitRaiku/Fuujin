@@ -7,6 +7,7 @@
       {label: "Audio player simplu", page: "aplayer"},
       {label: "Controlul volumului", page: "avolplayer"},
       {label: "Eterul", page: "trans"},
+      {label: "Playground", page: "plg"},
 		]},
     {label: "Radio", children: [
       {label: "Ce este un semnal", page: "semnal"},
