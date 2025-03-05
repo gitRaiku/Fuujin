@@ -17,7 +17,7 @@
     children = []
     page = ""
   }
-  let expanded = _expansionState[label] || false
+  let expanded = _expansionState[label] || true
 	const toggleExpansion = () => {
     expanded = _expansionState[label] = !expanded
   }

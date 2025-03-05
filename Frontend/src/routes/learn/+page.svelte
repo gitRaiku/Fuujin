@@ -7,8 +7,8 @@
       {label: "Audio player simplu", page: "aplayer"},
 		]},
     {label: "Radio", children: [
-      {label: "Ce este un semnal", page: "radio"},
-      {label: "Ce este un FFT", page: "radio"},
+      {label: "Ce este un semnal", page: "semnal"},
+      {label: "Ce este un FFT", page: "fft"},
     ]}
 	]
 

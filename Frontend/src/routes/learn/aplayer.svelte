@@ -3,10 +3,10 @@
   import { Playground, playgroundOnMount } from '/src/routes/playground/Playground.js';
 
   onMount(() => {
-    const canvas = document.getElementById(id)
+    const canvas = document.getElementById('canvas')
     let pl = new Playground(canvas, [])
     pl.updateBounds(window.innerWidth, window.innerHeight);
-    pl.fromSerial(str)
+    pl.fromSerial('[{"pos":[0.5,0.6],"name":"Alege fisier audio","ntype":3,"conns":[[0,[1,0]]],"data":{"audioPath":""}},{"pos":[1.7,0.4536401074560005],"name":"Player","ntype":7,"conns":[]}]')
   })
 </script>
 <div class="flex flex-row items-center justify-center">
