@@ -1,5 +1,8 @@
 <div class="w-[100vw] h-[92vh] mt-32 flex flex-col items-center justify-start">
-    <h1 class="text-7xl font-black mb-12">Fuujin</h1>
+    <h1 class="text-7xl font-black mb-12">
+      <img src="../fuujin.svg" alt="" class="w-22 h-auto inline align-middle"/>
+      Fuujin
+    </h1>
     <p class="text-3xl">Digital radio for the people</p>
     
     <div class="flex flex-row items-center justify-center gap-x-10 mt-20">

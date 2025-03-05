@@ -22,7 +22,7 @@
   let currentComponent = writable(Intro);
 
   async function loadPage(path) {
-    const cpage = (await import(path)).default;
+    const cpage = (await import(/* @vite-ignore */path)).default;
     currentComponent.set(cpage);
   }
 

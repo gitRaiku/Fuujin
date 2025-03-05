@@ -55,6 +55,7 @@
 </ul>
 {/if}
 
+<!--
 <style>
 	.no-arrow { padding-left: 1.0rem; }
 	.arrow {
@@ -64,4 +65,4 @@
 	}
 	.arrowDown { transform: rotate(90deg); }
 </style>
-
+-->
