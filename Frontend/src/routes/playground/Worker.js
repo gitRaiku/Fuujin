@@ -4,7 +4,7 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 async function waiter(func) { while (!func()) { await sleep(100) } }
 
 async function startSocket() {
-  socket = new WebSocket('ws://192.168.43.242:8080')
+  socket = new WebSocket('ws://localhost:8080')
   socket.onmessage = (event) => {}
   socket.onopen = () => {console.log('Worker websocket opened')}
   socket.onclose = () => {console.log('WOrker websocket closed')}

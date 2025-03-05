@@ -174,7 +174,7 @@ async def handle_connection(websocket, path):
             break
 
 async def main():
-    async with websockets.serve(handle_connection, '192.168.43.242', 8080):
+    async with websockets.serve(handle_connection, 'localhost', 8080):
         print('WebSocket server started on port 8080')
         await asyncio.Future()
 
