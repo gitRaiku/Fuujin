@@ -8,8 +8,9 @@ class AudioPacket {
       console.error(`UNDEFINED TYPE ${type}`)
     }
     this.type = type
+    this.freq = 10000
     if (data != undefined) {
-      if ((type == 0 && data.length != 512) || (type == 1 && data.length != 514)) {
+      if ((type == 0 && data.length != 512) || (type == 1 && data.length != 514) || (type == 2 && data.length != 514)) {
         console.error(`INVALID LENGTH ${type} ${data.length}`)
       }
       this.arr = new Float32Array(data.length)
@@ -17,9 +18,21 @@ class AudioPacket {
     } else {
       if (type == 0) {
         this.arr = new Float32Array(512)
-      } else if (type == 1) {
+      } else if (type == 1 || type == 2) {
         this.arr = new Float32Array(514)
       }
+    }
+  }
+
+  upconvert(freq) {
+    if (this.type != 2) {
+      this.setInterval(this.toFreq())
+      this.type = 2
+    }
+    if (this.freq == undefined) {
+      this.freq = freq
+    } else {
+      this.freq += freq
     }
   }
 
@@ -50,6 +63,11 @@ class AudioPacket {
   setInplace(p) {
     this.arr = p.arr
     this.type = p.type
+    if (p.freq != undefined) {
+      this.freq = p.freq
+    } else {
+      this.freq = 10000
+    }
   }
 
   setFreq(freq, amp = 1.0, offset = 0.0) {
@@ -64,6 +82,18 @@ class AudioPacket {
     }
   }
 
+  toCFreq() {
+    if (this.type == 0) {
+      return this.toFreq().toCFreq()
+    } else if (this.type == 1) {
+      this.freq = 10000
+      this.type = 2
+      return this
+    } else {
+      return this
+    }
+  }
+
   toFreq() {
     if (this.type == 0) {
       const fft = new KissFFTR(512)
@@ -73,7 +103,20 @@ class AudioPacket {
     } else if (this.type == 1) {
       return this
     } else if (this.type == 2) {
-      return this
+      const freqDif = this.freq - 10000
+      const binSize = 44100 / 512 / 2
+      if (Math.abs(freqDif) > 257 * binSize) {
+        return new AudioPacket(1)
+      } else {
+        const binDist = Math.floor(freqDif / binSize)
+        const f32 = new Float32Array(514)
+        for (let i = 0; i < 257; ++i) {
+          if (i + binDist < 0) { continue }
+          if (i + binDist > 256) { continue }
+          f32[i] = this.arr[i + binDist]
+        }
+        return new AudioPacket(1, f32)
+      }
     }
   }
 
@@ -89,10 +132,13 @@ class AudioPacket {
       }
       fft.dispose()
       return cp
+    } else if (this.type == 2) {
+      return this.toFreq().toTime()
     }
   }
 
   add(p) {
+    if (this.type == 2 || p.type == 2) { return new AudioPacket(0) }
     if (this.type == 0 && p.type == 1) {
       p.setInplace(p.toTime())
     } else if (this.type == 1 && p.type == 0) {
@@ -103,12 +149,11 @@ class AudioPacket {
   }
 
   mult(p) {
+    if (this.type == 2 || p.type == 2) { return new AudioPacket(0) }
     if (this.type == 1) { this.setInplace(this.toTime()) }
     if (p.type == 1) { p.setInplace(p.toTime()) }
     if (this.type == 0 && p.type == 0) {
       for (let i = 0; i < 512; ++i) { this.arr[i] *= p.arr[i] }
-    } else {
-
     }
     return this
   }
@@ -129,7 +174,51 @@ class RFElement {
     this.cstate = 0
   }
 
-  isRunning() { return 0; }
+  isRunning() { return 1; }
+
+  serialize() {}
+  restoreState(data) {}
+  static fromSerial(pl, data) {
+    let node;
+    console.log("Data", data)
+    switch (data['ntype']) {
+      case 0:
+        node = new RFAdder(data['name'], data['pos'], pl)
+        break;
+      case 1:
+        node = new RFMult(data['name'], data['pos'], pl)
+        break;
+      case 2:
+        node = new RFConst(data['name'], data['pos'], pl)
+        break;
+      case 3:
+        node = new RFAudio(data['name'], data['pos'], pl)
+        break;
+      case 4:
+        node = new RFTransmitter(data['name'], data['pos'], pl)
+        break;
+      case 5:
+        node = new RFReciever(data['name'], data['pos'], pl)
+        break;
+      case 7:
+        node = new RFPlayer(data['name'], data['pos'], pl)
+        break;
+      case 8:
+        node = new RFCopy(data['name'], data['pos'], pl)
+        break;
+      case 10:
+        node = new RFOscillator(data['name'], data['pos'], pl)
+        break;
+      case 11:
+        node = new RFUpconverter(data['name'], data['pos'], pl)
+        break;
+      default:
+        node = new RFEmpty(pl)
+        break
+    }
+    node.restoreState(data['data'])
+    return node
+  }
 
   destroy() {
     if (this.contextOpen) { this.destroyContextMenu() }
@@ -191,7 +280,7 @@ class RFElement {
     pl.ctx.textBaseline = 'top'
     pl.ctx.textAlign = 'left'
     pl.ctx.strokeStyle = 'red'
-    pl.ctx.fillStyle = 'black'
+    pl.ctx.fillStyle = '#e3e3e3'
     pl.ctx.font = '14px jetbrains-mono'
     pl.ctx.fillText(string, pos[0], pos[1])
   }
@@ -216,7 +305,7 @@ class RFElement {
       this.button.style.top = (this.pl.canvasPos[1] + tpos[1]) + 'px'
     }
     this.drawSquircle(pl, cpos, csz, 1, "#FFFFFF")
-    pl.ctx.fillStyle = "#DABADA"
+    pl.ctx.fillStyle = "#242526"
     pl.ctx.fill()
     this.drawText(pl, [tpos[0], tpos[1] - 40], this.name)
   }
@@ -231,7 +320,7 @@ class RFElement {
 
   draw(pl, pos, size) {
     let col
-    if (this.focused == true) { col = "blue" } else { col = "white" }
+    if (this.focused == true) { col = "#029919" } else { col = "white" }
     this.pdraw(pl, pos, size, col)
     if (this.contextOpen) {
       this.drawContextMenu(pl, pos)
@@ -297,6 +386,7 @@ class RFAudio extends RFElement {
     this.facets = [
       {x: 50, y: 0, h: 30, w: 30, iout: 1},
     ]
+    this.lastUri = ''
   }
 
   async processAudioData(file) {
@@ -316,8 +406,12 @@ class RFAudio extends RFElement {
     //console.log(a.length, a.duration, a.sampleRate, a.numberOfChannels)
   }
 
+  serialize() { return {'audioPath': this.lastUri} }
+  restoreState(data) { if (data['audioPath'] != undefined) { this.fetchDataFromLink(data['audioPath']) } }
+
   async fetchDataFromLink(uri) {
     //console.log(`link ${uri}`)
+    this.lastUri = uri
     let audioFile = await fetch(uri)
     await this.processAudioData(audioFile)
   }
@@ -384,11 +478,19 @@ class RFAudio extends RFElement {
     pl.ctx.stroke();
   }
 
-  isRunning() { return this.lastSample < this.audioLength }
+  //isRunning() { return this.lastSample < this.audioLength }
 
   pupdate() {
     const cp = new AudioPacket(0)
     let curPos = 0
+    if (this.audioData != undefined) {
+      while (curPos < 512) {
+        cp.arr[curPos] = this.audioData[this.lastSample % this.audioLength]
+        ++this.lastSample
+        ++curPos
+      }
+    }
+    /*
     if (this.audioData != undefined && this.lastSample < this.audioLength) {
       while (curPos < 512 && this.lastSample < this.audioLength) {
         cp.arr[curPos] = this.audioData[this.lastSample]
@@ -396,6 +498,7 @@ class RFAudio extends RFElement {
         ++curPos
       }
     }
+    */
     this.facets[0].val = cp
   }
 }
@@ -445,8 +548,8 @@ class RFAdder extends RFElement {
     this.h = 100
     this.w = 150
     this.facets = [
-      {x: -75, y: 0, h: 30, w: 30, iout: 0},
-      {x: 0, y: -50, h: 30, w: 30, iout: 0},
+      {x: -75, y: 50, h: 30, w: 30, iout: 0},
+      {x: -75, y: -50, h: 30, w: 30, iout: 0},
       {x: 75, y: 0, h: 30, w: 30, iout: 1},
     ]
   }
@@ -495,8 +598,8 @@ class RFMult extends RFElement {
     this.h = 100
     this.w = 150
     this.facets = [
-      {x: -75, y: 0, h: 30, w: 30, iout: 0},
-      {x: 0, y: -50, h: 30, w: 30, iout: 0},
+      {x: -75, y: 50, h: 30, w: 30, iout: 0},
+      {x: -75, y: -50, h: 30, w: 30, iout: 0},
       {x: 75, y: 0, h: 30, w: 30, iout: 1},
     ]
   }
@@ -549,10 +652,13 @@ class RFConst extends RFElement {
     this.h = 100
     this.w = 100
     this.facets = [
-      {x: 0, y: 50, h: 30, w: 30, iout: 1},
+      {x: 50, y: 0, h: 30, w: 30, iout: 1},
     ]
     this.constant = 0.0
   }
+
+  serialize() { return {'constant': this.constant} }
+  restoreState(data) { console.log("Const", data); this.constant = data['constant'] }
 
   initContextMenu() {
     this.input.style.position = 'fixed'
@@ -739,7 +845,7 @@ class RFTransmitter extends RFElement {
 
   destroyContextMenu() { if (this.ppl != undefined) { this.ppl.destroy() } }
   pupdate() { 
-    const tval = this.facets[0].val.toFreq()
+    const tval = this.facets[0].val.toCFreq()
     this.worker.postMessage({'type': 'data', 'data': tval})
   }
 }
@@ -808,7 +914,7 @@ class RFPlayer extends RFElement {
 class RFOscillator extends RFElement {
   constructor(name, pos, pl) { 
     super(name, pos, pl); 
-    this.ntype = 5
+    this.ntype = 10
     this.x = pos[0]
     this.y = pos[1]
     this.h = 100
@@ -824,6 +930,13 @@ class RFOscillator extends RFElement {
   }
 
   preset() { this.foffset = 0 }
+
+  serialize() { return {'freq': this.freq} }
+  restoreState(data) { this.freq = data['freq'] }
+
+  reset() {
+    this.startTime = new Date().getTime()
+  }
 
   initContextMenu() {
     this.input.style.position = 'fixed'
@@ -884,6 +997,82 @@ class RFOscillator extends RFElement {
   }
 }
 
+class RFUpconverter extends RFElement {
+  constructor(name, pos, pl) { 
+    super(name, pos, pl); 
+    this.ntype = 11
+    this.x = pos[0]
+    this.y = pos[1]
+    this.h = 100
+    this.w = 100
+    this.facets = [
+      {x: -50, y: 0, h: 30, w: 30, iout: 0},
+      {x: 50, y: 0, h: 30, w: 30, iout: 1},
+    ]
+    this.samples = []
+    this.freq = 64 * 44100.0 / 512.0
+  }
+
+  initContextMenu() {
+    this.input.style.position = 'fixed'
+    this.input.type = 'text'
+    this.input.pl = this.pl
+    this.input.node = this
+
+    this.name = "Oscillator output"
+    this.input.style.visibility = 'visible'
+    this.input.style.border = 'none'
+    this.input.style.outline = 'none'
+    this.input.style.background = 'white'
+    this.input.style.color = 'black'
+    this.input.value = this.freq
+
+    this.input.onkeydown = this.inputHandleInput
+    this.input.onfocus = this.inputHandleFocus
+    document.body.appendChild(this.input)
+  }
+
+  inputHandleInput(e) {
+    this.pl.curaction = 0
+    const keycode = e.keyCode
+    if (keycode == 13) { 
+      let res = parseFloat(this.value)
+      console.log(`r ${res}`)
+      this.node.freq = res
+      if (res != NaN) {
+        this.node.contextOpen = false 
+        this.pl.drawGraph()
+      }
+    }
+  }
+
+  pdraw(pl, pos, size, col) {
+    this.drawSquircle(pl, pos, size, 2, col)
+    pl.ctx.beginPath();
+    pl.ctx.strokeStyle = col;
+    pl.ctx.lineWidth = 3;
+
+    const [x, y] = pos;
+
+    pl.ctx.beginPath()
+    pl.ctx.arc(x, y, 30, 0, Math.PI * 2);
+    pl.ctx.stroke()
+
+    pl.ctx.beginPath()
+    pl.ctx.moveTo(x - 20, y)
+    pl.ctx.bezierCurveTo(x - 0, y - 30, x + 0, y + 30, x + 20, y)
+    pl.ctx.moveTo(x + 20, y)
+    pl.ctx.bezierCurveTo(x - 0, y - 30, x + 0, y + 30, x + 20, y)
+    pl.ctx.stroke()
+  }
+
+  pupdate() {
+    const cp = new AudioPacket(2, this.facets[0].val.toFreq().arr)
+    cp.upconvert(this.freq)
+    this.facets[1].val = cp
+  }
+}
+
 export class Playground {
   constructor(canvas, nodeButtons) {
     this.canvas = canvas
@@ -895,6 +1084,49 @@ export class Playground {
     this.nodeButtons = nodeButtons
     this.nodeUpdateOrder = [] 
     this.nextid = 0
+  }
+
+  serialize() {
+    let nodeData = []
+    for (let i = 0; i < this.nodes.length; ++i) {
+      let conns = []
+      for (let j = 0; j < this.nodes[i].facets.length; ++j) {
+        if (this.nodes[i].facets[j].iout == 1 && 
+            this.nodes[i].facets[j].link != null && 
+            this.nodes[i].facets[j].link != undefined) {
+          conns.push([i, this.nodes[i].facets[j].link])
+        }
+      }
+      nodeData.push({
+        'pos': [this.nodes[i].x, this.nodes[i].y],
+        'name': this.nodes[i].name,
+        'ntype': this.nodes[i].ntype,
+        'conns': conns,
+        'data': this.nodes[i].serialize()
+      })
+    }
+    return JSON.stringify(nodeData)
+  }
+
+  fromSerial(state) {
+    let data = JSON.parse(state)
+    for (let node of this.nodes) {node.destroy()}
+    this.nodes = []
+    for (let cnode of data) {
+      this.nodes.push(RFElement.fromSerial(this, cnode))
+    }
+
+    console.log(this.nodes)
+
+    let i = 0
+    for (let cnode of data) {
+      for (let con of cnode['conns']) {
+        console.log(`Linking ${i} ${con[0]} ${con[1]}`)
+        this.linkFacets([i, con[0]], con[1]) 
+      }
+      ++i
+    }
+    this.drawGraph()
   }
 
   updateNodeUpdateOrder() {
@@ -1116,8 +1348,8 @@ export class Playground {
   }
 
   shouldRunSimulation() {
-    return this.nodes.some((node) => {
-      return node.isRunning()
+    return !this.nodes.some((node) => {
+      return !node.isRunning()
     })
   }
 
@@ -1189,6 +1421,9 @@ export class Playground {
         break
       case 8:
         this.nodes.push(new RFCopy("Copy", f, this))
+        break
+      case 9:
+        this.nodes.push(new RFUpconverter("Upco", f, this))
         break
       default:
         this.startSimulation()
@@ -1390,6 +1625,9 @@ export class Playground {
   }
 
   keydown(e) {
+    if (e.key == 'c' && Playground.getMods(e) == 0) {
+      console.log(this.serialize())
+    }
     if (e.key == 'Delete' && Playground.getMods(e) == 0) {
       if (this.selnode != undefined) {
         this.destroyNode(this.selnode)

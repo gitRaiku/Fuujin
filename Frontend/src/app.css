@@ -2,16 +2,16 @@
 @import "tailwindcss";
 
 @theme {
-    --color-fg: #FFFFFF; 
-    --color-bg: #040404;
-    --color-ghost: #FFFFFF; 
-    --color-ghostbg: #0a0a0a; 
-    --color-primary: #43D051;
-    --color-secondary: #27742E; 
+    --color-fg: #e3e3e3; 
+    --color-bg: #1b1b1d;
+    --color-ghost: #444950; 
+    --color-ghostbg: #242526; 
+    --color-primary: #029919;
+    --color-secondary: #43D051; 
 }
 
 html, body {
-    background: #040404; 
+    background: #1b1b1d; 
     background-size: cover;
 }
 

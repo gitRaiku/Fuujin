@@ -24,12 +24,14 @@ async function startWebsocketLoop() {
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING) { console.error("Worker: Socket closed!"); stopWebsocketLoop() }
     if (socket.readyState == WebSocket.OPEN) {
       if (buffer.length > 0) {
+        console.log(buffer[0])
         let larr = new Uint8Array(5 + buffer[0].arr.length * 4)
         larr[0] = '0'
-        larr[1] = 0
-        larr[2] = 10
-        larr[3] = 0
-        larr[4] = 0
+        console.log(`Sending ${buffer[0].freq}`)
+        larr[1] = (buffer[0].freq & 0xFF000000) >> 24
+        larr[2] = (buffer[0].freq & 0x00FF0000) >> 16
+        larr[3] = (buffer[0].freq & 0x0000FF00) >> 8
+        larr[4] = (buffer[0].freq & 0x000000FF) >> 0
         const u8 = new Uint8Array(buffer[0].arr.buffer)
         larr.set(u8, 5)
         socket.send(larr)
@@ -77,6 +79,25 @@ async function startReadingLoop() {
   socket.send(new Uint8Array([1, 0, 10, 0, 0]))
   socket.onmessage = (event) => {parseBackendResponse(event.data)}
 }
+async function startReadingLoopSpec(freq) {
+  await waiter(() => { return socket.readyState == WebSocket.OPEN } )
+  console.log("STARTED READING")
+  const message = new Uint8Array(9)
+  message[0] = 3
+
+  message[1] = (freq[0] & 0xFF000000) >> 24
+  message[2] = (freq[0] & 0x00FF0000) >> 16
+  message[3] = (freq[0] & 0x0000FF00) >> 8
+  message[4] = (freq[0] & 0x000000FF) >> 0
+
+  message[5] = (freq[1] & 0xFF000000) >> 24
+  message[6] = (freq[1] & 0x00FF0000) >> 16
+  message[7] = (freq[1] & 0x0000FF00) >> 8
+  message[8] = (freq[1] & 0x000000FF) >> 0
+
+  socket.send(message)
+  socket.onmessage = (event) => {parseBackendResponse(event.data)}
+}
 function stopReadingLoop() { clearInterval(rloop) }
 
 onmessage = (e) => {
@@ -91,6 +112,8 @@ onmessage = (e) => {
     stopWebsocketLoop()
   } else if (e.data['type'] == 'startReading') {
     startReadingLoop()
+  } else if (e.data['type'] == 'startSpec') {
+    startReadingLoopSpec(e.data['freq'])
   } else if (e.data['type'] == 'stopReading') {
     stopReadingLoop()
     socket.close()

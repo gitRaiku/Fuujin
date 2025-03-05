@@ -11,8 +11,11 @@ from collections import deque
 class Message:
     def __init__(self, data):
         self.type = data[0]
-        if len(data) > 1:
+        if len(data) > 4:
             self.freq = data[1] << 24 | data[2] << 16 | data[3] << 8 | data[4]
+        if len(data) > 8:
+            self.freq2 = data[5] << 24 | data[6] << 16 | data[7] << 8 | data[8]
+        if len(data) > 5:
             self.data = np.frombuffer(data[5:], dtype='float32')
 
     '''
@@ -25,6 +28,9 @@ class Message:
 
     def getFreq(self):
         return self.freq
+
+    def getFreq2(self):
+        return self.freq2
 
     def getAt(self, x):
         return self.data[x]
@@ -84,6 +90,51 @@ async def startStream(websocket, centerFreq, cid):
         print('Connection closed')
         return
 
+async def sendSpec(websocket, f1, f2, tslot):
+    if False:
+        res = np.array(np.random.rand(514) * 10, dtype='float32')
+        await websocket.send(res.tobytes())
+        return
+
+    if False:
+        res = np.zeros(514, dtype='float32')
+        res[40] = 200
+        await websocket.send(res.tobytes())
+        return
+
+    res = np.zeros(514, dtype='float32')
+    for (id, e) in messages.items():
+        while len(e) > 0 and e[0].tstamp < tslot:
+            e.popleft()
+
+        if len(e) > 0:
+            cf = e[0].getFreq()
+            dif = cf - centerFreq
+            dif = 0
+            if abs(dif) <= (514 // 2) // 2:
+                for k in range(0, 257):
+                    if (k + dif < 0): # TODO: Use math
+                        continue
+                    if (k + dif > 257):
+                        break
+                    res[2 * k    ] += e[0].getAt((k + dif) * 2)
+                    res[2 * k + 1] += e[0].getAt((k + dif) * 2 + 1)
+    await websocket.send(res.tobytes())
+
+async def startSpecStream(websocket, f1, f2, cid):
+    print(f'Start streaming to {cid}:{f1}-{f2}')
+    ct = 0
+    try:
+        while True:
+            cct = getTimeSlot()
+            await asyncio.sleep((512 / 44100) * 0.4)
+            if cct > ct:
+                ct = cct
+                await sendSpec(websocket, f1, f2, cct)
+    except websockets.ConnectionClosed:
+        print('Connection closed')
+        return
+
 async def handle_connection(websocket, path):
     global nextSockId
     cid = nextSockId
@@ -102,7 +153,7 @@ async def handle_connection(websocket, path):
                     messages[cid][0].tstamp = getTimeSlot()
                 else:
                     messages[cid][-1].tstamp = messages[cid][-2].tstamp + 1
-                # print(f'Added {getTimeSlot()} {messages[cid][-1].tstamp}')
+                print(f'Added {formatted.getFreq()}')
 
             elif formatted.getType() == 1:
                 print('startst')
@@ -111,6 +162,9 @@ async def handle_connection(websocket, path):
                 cid = nextSockId
                 print('resetCid')
                 nextSockId += 1
+            elif formatted.getType() == 3:
+                print('startst 3')
+                await startSpecStream(websocket, formatted.getFreq(), formatted.getFreq2(), cid)
         except websockets.ConnectionClosed:
             print('Connection closed')
             break

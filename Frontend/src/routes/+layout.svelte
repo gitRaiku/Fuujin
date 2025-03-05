@@ -8,10 +8,12 @@
     <Header/>
 </header>
 
-<main class="text-fg v-[100vw] h-[100vh]">
+<main class="bg-bg text-fg v-[100vw] h-[100vh]">
     <slot/>
 </main>
 
+<!--
 <footer>
     <Footer/>
 </footer>
+-->
