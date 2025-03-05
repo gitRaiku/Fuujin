@@ -23,7 +23,7 @@
 </script>
 <div class="flex flex-row items-center justify-center">
   <div class="max-w-300 w-full">
-    <div class="text-6xl font-bold mb-4 w-full">Nodurile Fuujin</div>
+    <div class="text-6xl font-bold mb-4 w-full">Toate tipurile de noduri</div>
 
     <div class="text-lg mb-6 w-full">
       In Fuujin se afla un numar de noduri ce te ajuta a prelua un semnal audio si a-l procesa pana in punctul in care ajunge ori pe eterul radio, ori in boxe spre a fi auzit.

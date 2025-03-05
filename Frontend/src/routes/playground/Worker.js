@@ -4,7 +4,7 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 async function waiter(func) { while (!func()) { await sleep(100) } }
 
 async function startSocket() {
-  socket = new WebSocket('ws://localhost:8080')
+  socket = new WebSocket('ws://192.168.43.242:8080')
   socket.onmessage = (event) => {}
   socket.onopen = () => {console.log('Worker websocket opened')}
   socket.onclose = () => {console.log('WOrker websocket closed')}
@@ -24,10 +24,10 @@ async function startWebsocketLoop() {
     if (socket.readyState == WebSocket.CLOSED || socket.readyState == WebSocket.CLOSING) { console.error("Worker: Socket closed!"); stopWebsocketLoop() }
     if (socket.readyState == WebSocket.OPEN) {
       if (buffer.length > 0) {
-        console.log(buffer[0])
+        //console.log(buffer[0])
         let larr = new Uint8Array(5 + buffer[0].arr.length * 4)
         larr[0] = '0'
-        console.log(`Sending ${buffer[0].freq}`)
+        //console.log(`Sending ${buffer[0].freq}`)
         larr[1] = (buffer[0].freq & 0xFF000000) >> 24
         larr[2] = (buffer[0].freq & 0x00FF0000) >> 16
         larr[3] = (buffer[0].freq & 0x0000FF00) >> 8

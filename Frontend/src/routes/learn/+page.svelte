@@ -2,9 +2,11 @@
   import TreeView from '/src/lib/TreeView.svelte'
 	const trees = [
     {label: "Fuujin", children: [
-      {label: "Descriere Fuujin", page: "intro"},
-      {label: "Nodurile Fuujin", page: "nodes"},
+      {label: "Descriere", page: "intro"},
+      {label: "Tipurile de Noduri", page: "nodes"},
       {label: "Audio player simplu", page: "aplayer"},
+      {label: "Controlul volumului", page: "avolplayer"},
+      {label: "Eterul", page: "trans"},
 		]},
     {label: "Radio", children: [
       {label: "Ce este un semnal", page: "semnal"},

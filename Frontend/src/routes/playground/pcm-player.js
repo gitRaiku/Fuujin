@@ -5,6 +5,11 @@ export class AudioPlayer {
     this.sourceQueue = []
   }
 
+  stop() {
+    this.audioContext.close()
+    this.audioContext = null
+  }
+
   async init() {
       if (this.audioContext === null) { this.audioContext = new AudioContext(); }
       this.nextPieceStartTime = this.audioContext.currentTime;

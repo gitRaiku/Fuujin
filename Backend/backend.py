@@ -153,7 +153,7 @@ async def handle_connection(websocket, path):
                     messages[cid][0].tstamp = getTimeSlot()
                 else:
                     messages[cid][-1].tstamp = messages[cid][-2].tstamp + 1
-                print(f'Added {formatted.getFreq()}')
+                # print(f'Added {formatted.getFreq()}')
 
             elif formatted.getType() == 1:
                 print('startst')
@@ -170,7 +170,7 @@ async def handle_connection(websocket, path):
             break
 
 async def main():
-    async with websockets.serve(handle_connection, 'localhost', 8080):
+    async with websockets.serve(handle_connection, '192.168.43.242', 8080):
         print('WebSocket server started on port 8080')
         await asyncio.Future()
 

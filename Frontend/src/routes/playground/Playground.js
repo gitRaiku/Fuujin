@@ -901,9 +901,8 @@ class RFPlayer extends RFElement {
   }
 
   pstop() { 
-    if (this.ppl != undefined) {
-      this.ppl.destroy() 
-    }
+    if (this.ppl != undefined) {this.ppl.destroy() }
+    if (this.ap != undefined) {this.ap.stop()}
   }
 
   pupdate() {
@@ -1085,7 +1084,7 @@ export class Playground {
     this.nodes = []
     this.hovernode = null
     this.curaction = 0
-    this.nextNodeType = 0
+    this.nextNodeType = 99999
     this.nodeButtons = nodeButtons
     this.nodeUpdateOrder = [] 
     this.nextid = 0
@@ -1507,6 +1506,7 @@ export class Playground {
 
   linkFacets(f1, f2) {
     if (f1 != null) {
+      console.log(`Linking ${this.nodes} ${f1} ${f2}`)
       const oldInLink = this.nodes[f1[0]].facets[f1[1]].link
       const oldOutLink = this.nodes[f2[0]].facets[f2[1]].link
       if (oldInLink != undefined && oldInLink[0] == f2[0] && oldInLink[1] == f2[1]) {

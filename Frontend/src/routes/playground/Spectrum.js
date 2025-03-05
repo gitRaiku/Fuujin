@@ -3,19 +3,6 @@ let sopened = false
 let readTimer
 let drawTimer
 export async function spectrumOnMount() {
-  /*
-  socket = await new WebSocket('ws://localhost:8080')
-  socket.onmessage = (event) => {}
-  socket.onopen = () => {
-    sopened = true
-  }
-  socket.onclose = () => {
-    console.log('Spectrum websocket closed')
-    clearInterval(readTimer)
-    clearInterval(drawTimer)
-  }
-  socket.onerror = (error) => {console.log(`Spectrum websocket error ${error}`)}
-  */
 }
 
 export class Spectrum {

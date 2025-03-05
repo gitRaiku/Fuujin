@@ -29,7 +29,7 @@
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_osci">Oscillator Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_audi">Audio Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_ante">Transmitter Node</button>
-      <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_recv">Reciever Node</button>
+      <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_recv">Receiver Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_plyr">Player Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all hidden" id="node_upco">Upconverter Node</button>
     </div>
@@ -86,7 +86,6 @@
       pl = new Playground(canvas, nodeButtons)
       pl.updateBounds(window.innerWidth, window.innerHeight);
       window.pl = pl
-
 
       document.getElementById("node_start").addEventListener("click", (e) => {pl.startSimulation()})
       document.getElementById("node_stop").addEventListener("click", (e) => {pl.stopSimulation()})
