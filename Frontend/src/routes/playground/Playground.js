@@ -1,6 +1,12 @@
 import { PCMPlayer, AudioPlayer } from '/src/routes/playground/pcm-player.js';
 import { KissFFT, KissFFTR, loadKissFFT } from '/src/routes/playground/KissFFTLoader.js';
 
+const bgcol = "#1b1b1d"
+const fgcol = "#e3e3e3"
+const primcol = "#029919"
+const seccol = "#43D051"
+const ghostcol = "#242526"
+
 export async function playgroundOnMount() { await loadKissFFT() }
 class AudioPacket {
   constructor(type, data) {
@@ -289,7 +295,7 @@ class RFElement {
 
   drawContextMenu(pl, pos) {
     const cpos = [pos[0], pos[1] - 50 - 140]
-    const csz = [160, 160]
+    const csz = [200, 160]
     const tpos = [cpos[0] - csz[0] / 2 + 20, cpos[1]]
     const tsz = [120, 50]
     if (this.input != undefined) {
@@ -417,7 +423,7 @@ class RFAudio extends RFElement {
   }
 
   initContextMenu() {
-    this.name = "Select wav file"
+    this.name = "Alege fisier audio"
 
     this.input.style.position = 'fixed'
     this.input.type = 'file'
@@ -428,7 +434,7 @@ class RFAudio extends RFElement {
       const file = event.target.files[0]
       if (file) { 
         this.processAudioData(file)
-        this.button.style.background = 'green'
+        this.button.style.background = seccol
       }
     }
 
@@ -436,7 +442,7 @@ class RFAudio extends RFElement {
     this.button.style.visibility = 'visible'
     // this.button.style.border = 'none'
     // this.button.style.outline = 'none'
-    this.button.style.background = 'white'
+    this.button.style.background = fgcol
     this.button.style.color = 'black'
     this.button.input = this.input
     this.button.node = this
@@ -666,12 +672,12 @@ class RFConst extends RFElement {
     this.input.pl = this.pl
     this.input.node = this
 
-    this.name = "Constant output"
+    this.name = "Valoare Constanta"
     this.input.style.visibility = 'visible'
     this.input.style.border = 'none'
     this.input.style.outline = 'none'
-    this.input.style.background = 'white'
-    this.input.style.color = 'black'
+    this.input.style.background = ghostcol;
+    this.input.style.color = fgcol
     this.input.value = this.constant
 
     this.input.onkeydown = this.inputHandleInput
@@ -922,8 +928,8 @@ class RFOscillator extends RFElement {
       {x: 50, y: 0, h: 30, w: 30, iout: 1},
     ]
     this.samples = []
-    // this.freq = 440.0
-    this.freq = 64 * 44100.0 / 512.0
+    this.freq = 440.0
+    // this.freq = 64 * 44100.0 / 512.0
 
     this.amplitude = 0.4
   }
@@ -943,12 +949,12 @@ class RFOscillator extends RFElement {
     this.input.pl = this.pl
     this.input.node = this
 
-    this.name = "Oscillator output"
+    this.name = "Frecventa Oscilator"
     this.input.style.visibility = 'visible'
     this.input.style.border = 'none'
     this.input.style.outline = 'none'
-    this.input.style.background = 'white'
-    this.input.style.color = 'black'
+    this.input.style.background = ghostcol;
+    this.input.style.color = fgcol
     this.input.value = this.freq
 
     this.input.onkeydown = this.inputHandleInput
@@ -1022,8 +1028,8 @@ class RFUpconverter extends RFElement {
     this.input.style.visibility = 'visible'
     this.input.style.border = 'none'
     this.input.style.outline = 'none'
-    this.input.style.background = 'white'
-    this.input.style.color = 'black'
+    this.input.style.background = ghostcol;
+    this.input.style.color = fgcol
     this.input.value = this.freq
 
     this.input.onkeydown = this.inputHandleInput
@@ -1395,31 +1401,31 @@ export class Playground {
     }
     switch (nodeType) {
       case 0:
-        this.nodes.push(new RFAdder("Adder", f, this))
+        this.nodes.push(new RFAdder("Adunator", f, this))
         break
       case 1:
-        this.nodes.push(new RFMult("Mult", f, this))
+        this.nodes.push(new RFMult("Inmultitor", f, this))
         break
       case 2:
-        this.nodes.push(new RFConst("Const", f, this))
+        this.nodes.push(new RFConst("Constant", f, this))
         break
       case 3:
         this.nodes.push(new RFAudio("Audio", f, this))
         break
       case 4:
-        this.nodes.push(new RFTransmitter("Antenna", f, this))
+        this.nodes.push(new RFTransmitter("Transmitator", f, this))
         break
       case 5:
-        this.nodes.push(new RFOscillator("Oscillator", f, this))
+        this.nodes.push(new RFOscillator("Oscilator", f, this))
         break
       case 6:
-        this.nodes.push(new RFReciever("Reciever", f, this))
+        this.nodes.push(new RFReciever("Receptor", f, this))
         break
       case 7:
         this.nodes.push(new RFPlayer("Player", f, this))
         break
       case 8:
-        this.nodes.push(new RFCopy("Copy", f, this))
+        this.nodes.push(new RFCopy("Copiator", f, this))
         break
       case 9:
         this.nodes.push(new RFUpconverter("Upco", f, this))

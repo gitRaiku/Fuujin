@@ -19,19 +19,19 @@
     </div>
 
     <div class="border border-2 border-ghost w-[80%] h-[20%]" id='canvasDiv'><canvas id="spectrumCanvas" class="w-[100%] object-fill"></canvas></div>
-    <div class="w-[80%] h-[80%] border border-t-0 border-2 border-ghost"><canvas id="canvas"></canvas></div>
+    <div class="w-[80%] h-[60%] border border-t-0 border-2 border-ghost"><canvas id="canvas"></canvas></div>
 
     <div id="controls" class="w-[80%] h-auto p-3  gap-x-5 flex flex-row items-center justify-center">
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_addr">Adder Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_mult">Multiplier Node</button>
+      <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_copy">Copy Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_cnst">Constant Node</button>
+      <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_osci">Oscillator Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_audi">Audio Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_ante">Transmitter Node</button>
-      <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_osci">Oscillator Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_recv">Reciever Node</button>
       <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_plyr">Player Node</button>
-      <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_upco">Upconverter Node</button>
-      <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all" id="node_copy">Copy Node</button>
+      <button class="text-center text-m w-auto bg-ghostbg border border-2 border-ghost p-5 pr-9 pl-9 rounded-lg hover:cursor-pointer hover:bg-secondary transition-all hidden" id="node_upco">Upconverter Node</button>
     </div>
   </div>
 </div>

@@ -2,12 +2,13 @@
   import TreeView from '/src/lib/TreeView.svelte'
 	const trees = [
     {label: "Fuujin", children: [
-      {label: "Intro", page: "intro"},
+      {label: "Descriere Fuujin", page: "intro"},
       {label: "Nodurile Fuujin", page: "nodes"},
       {label: "Audio player simplu", page: "aplayer"},
 		]},
     {label: "Radio", children: [
-      {label: "Cum merge radioul", page: "radio"},
+      {label: "Ce este un semnal", page: "radio"},
+      {label: "Ce este un FFT", page: "radio"},
     ]}
 	]
 
@@ -35,7 +36,7 @@
   <TreeView trees={trees} {clicker}/>
   </div>
 
-  <div class="p-3 w-full border-r-2 overflow-scroll border-ghost">
+  <div class="p-8 w-full border-r-2 overflow-scroll border-ghost">
     {#if $currentComponent}
       <svelte:component this={$currentComponent} />
     {/if}
